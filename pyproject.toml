@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pickaxe"
+version = "0.0.1"
+authors = [
+  { name="Philip Crotwell", email="crotwell@seis.sc.edu" },
+]
+description = "Seismic phase picker."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "obspy",
+    "ipython"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/crotwell/pickaxe"
+"Bug Tracker" = "https://github.com/crotwell/pickaxe/issues"
+
+[project.scripts]
+    "pickaxe" = "pickaxe.pickaxe_main:main"
