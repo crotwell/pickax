@@ -20,5 +20,8 @@ p = PickSeis(st, qmlevent=catalog[0], finishFn=dosave)
 p.draw()
 # on space, dosave will be called
 
+station_code = "JSC"
 st = obspy.read(f'{station_code}.mseed')
 catalog = obspy.read_events(evt_qml)
+p = PickSeis(st, qmlevent=catalog[0], finishFn=dosave)
+p.draw()
