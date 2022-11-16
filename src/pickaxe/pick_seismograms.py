@@ -12,6 +12,8 @@ class PickSeis:
         self.filters = [ ]
         self._init_data_(stream, qmlevent)
         self.fig, self.ax = plt.subplots()
+#        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
+        self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self.bm = BlitManager(self.fig.canvas, [])
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
@@ -37,9 +39,11 @@ class PickSeis:
 
         self.ax.relim()
         self.fig.canvas.draw_idle()
-    def do_finish(self):
+    def do_finish(self, command):
         if self.finishFn is not None:
-            self.finishFn(self.qmlevent, self.stream)
+            self.finishFn(self.qmlevent, self.stream, command)
+        else:
+            self.close()
     def draw(self):
         self.ax.set_xlabel('seconds')
         stats = self.stream[0].stats
@@ -48,8 +52,6 @@ class PickSeis:
         self.draw_stream()
         for pick in self.channel_picks():
             self.draw_flag(pick, self.arrival_for_pick(pick))
-#        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
-        self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
@@ -122,8 +124,8 @@ class PickSeis:
     def clear_flags(self):
         for artist in self.bm._flag_artists:
             artist.remove()
-            self.bm._flag_artists.remove(artist)
             self.bm._artists.remove(artist)
+        self.bm._flag_artists = []
     def do_filter(self, idx):
         self.clear_trace()
         if idx < 0 or idx >= len(self.filters):
@@ -146,10 +148,12 @@ class PickSeis:
     def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
         if event.key=="q":
             print("Finished picking")
-            self.do_finish()
+            self.do_finish("quit")
             self.close()
         elif event.key == "n" or event.key == "v":
-            self.do_finish()
+            self.do_finish("next")
+        elif event.key == "r":
+            self.do_finish("prev")
         elif event.key == "c":
             if event.inaxes is not None:
                 self.do_pick(event)

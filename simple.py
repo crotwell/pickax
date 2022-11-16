@@ -28,16 +28,25 @@ filters = [
 curr_idx = 0
 pickaxe = None
 
-def dosave(qmlevent, stream):
+def dosave(qmlevent, stream, command):
     global curr_idx
     global pickaxe
     station_code = stream[0].stats.station
     out_cat = obspy.Catalog([qmlevent])
     out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
-    curr_idx += 1
-    print(f"load {curr_idx} of {len(station_codes)}")
-    if curr_idx < len(station_codes):
-        print(f"load {curr_idx}  {station_codes[curr_idx]}")
+    print(f"go {command}")
+    if command == "next":
+        curr_idx += 1
+    elif command == "prev":
+        curr_idx -= 1
+    else:
+        # quit
+        return
+    if curr_idx < 0:
+        print(f"can't go before start: {curr_idx}")
+        curr_idx = 0
+    elif curr_idx < len(station_codes):
+        print(f"load {curr_idx}  of {len(station_codes)}, {station_codes[curr_idx]}")
         st = obspy.read(f'{station_codes[curr_idx]}.mseed')
         preprocess(st)
         pickaxe.update_data(st, catalog[0])
