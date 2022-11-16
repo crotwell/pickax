@@ -18,6 +18,8 @@ def main():
         'from obspy.core.event.base import CreationInfo',
         'import obspy',
         'from pickaxe import PickSeis',
+        'import matplotlib.pyplot as plt',
+        "plt.rcParams['toolbar'] = 'None'",
     ]
     c.InteractiveShell.colors = 'LightBG'
     c.InteractiveShell.confirm_exit = False

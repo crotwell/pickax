@@ -30,4 +30,4 @@ evt_qml = "elgin.qml"
 catalog = obspy.read_events(evt_qml)
 info = CreationInfo(author="Jane Smith", version="0.0.1")
 
-pick_station(station_codes[0], catalog[0], info)
+p = pick_station(station_codes[0], catalog[0], info)

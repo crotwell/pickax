@@ -24,30 +24,36 @@ class PickSeis:
         self.bm = BlitManager(self.fig.canvas, [])
         self.ax.set_xlabel('seconds')
         stats = self.stream[0].stats
-        self.ax.set_title(f"Pickaxe {stats.network}_{stats.station}_{stats.location}_{stats.channel}")
+        self.ax.set_title(f"Pickaxe {self.list_channels()}")
         # add lines
         for trace in self.stream:
             (ln,) = self.ax.plot(trace.times(),trace.data,color="black", lw=1, animated=True)
             self.bm.add_artist(ln)
-        sta_code = self.stream[0].stats.station
-        staPicks = filter(lambda p: p.waveform_id.station_code == sta_code, self.qmlevent.picks)
 
-        for pick in staPicks:
-            found = False
-            for o in self.qmlevent.origins:
-                for a in o.arrivals:
-                    if pick.resource_id.id == a.pick_id.id:
-                        self.draw_flag(pick, a)
-                        found = True
-                        break
-            if not found:
-                self.draw_flag(pick)
+        for pick in self.channel_picks():
+            self.draw_flag(pick, self.arrival_for_pick(pick))
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
 
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
+    def arrival_for_pick(self, pick):
+        for o in self.qmlevent.origins:
+            for a in o.arrivals:
+                if pick.resource_id.id == a.pick_id.id:
+                    return a
+        return None
+    def station_picks(self):
+        sta_code = self.stream[0].stats.station
+        net_code = self.stream[0].stats.network
+        return filter(lambda p: p.waveform_id.network_code == net_code and p.waveform_id.station_code == sta_code, self.qmlevent.picks)
+    def channel_picks(self):
+        loc_code = self.stream[0].stats.location
+        chan_code = self.stream[0].stats.channel
+        sta_picks = self.station_picks()
+        return filter(lambda p: p.waveform_id.location_code == loc_code and p.waveform_id.channel_code == chan_code, sta_picks)
+
     def draw_flag(self, pick, arrival=None):
         at_time = pick.time - self.start
         xmin, xmax, ymin, ymax = self.ax.axis()
@@ -92,15 +98,30 @@ class PickSeis:
             print("Finished picking, return picks")
             self.do_finish()
             plt.close()
-        elif event.key == "m":
+        elif event.key == "c":
             if event.inaxes is not None:
                 self.do_pick(event)
-        elif event.key == "p":
+        elif event.key == "a" or event.key == "p":
             if event.inaxes is not None:
                 self.do_pick(event, phase="P")
         elif event.key == "s":
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
-    def print_picks(self):
-        for p in self.qmlevent.picks:
-            print(f"{p.phase_hint} {p.time}")
+        elif event.key == "d":
+            print(self.display_picks())
+    def list_channels(self):
+        chans = ""
+        for tr in self.stream:
+            stats = tr.stats
+            nslc = f"{stats.network}_{stats.station}_{stats.location}_{stats.channel}"
+            if nslc not in chans:
+                chans = f"{chans} {nslc}"
+        return chans.strip()
+    def display_picks(self):
+        s = self.list_channels()
+        s += "\n"
+        for p in self.channel_picks():
+            a = self.arrival_for_pick(p)
+            pname = a.phase if a is not None else p.phase_hint
+            s = f"{s}\n{pname} {p.time}"
+        return s
