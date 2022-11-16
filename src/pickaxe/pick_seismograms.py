@@ -7,20 +7,36 @@ from .blit_manager import BlitManager
 
 class PickSeis:
     def __init__(self, stream, qmlevent=None, finishFn=None):
+        self.finishFn = finishFn
+        self.creation_info = None
+        self.filters = [ ]
+        self._init_data_(stream, qmlevent)
+        self.fig, self.ax = plt.subplots()
+        self.bm = BlitManager(self.fig.canvas, [])
+    def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
         if qmlevent is not None:
             self.qmlevent = qmlevent
         else:
             self.qmlevent = obspy.core.event.Event()
         self.start = self.stream[0].stats.starttime
-        self.finishFn = finishFn
-        self.creation_info = None
-        self.filters = [ ]
         self.curr_filter = -1
         self._filtered_stream = None
-        self.fig, self.ax = plt.subplots()
-        self.bm = BlitManager(self.fig.canvas, [])
+    def update_data(self, stream, qmlevent=None):
+        self._init_data_(stream, qmlevent)
+        self.clear_trace()
+        self.clear_flags()
+        self.ax.clear()
+        self.ax.set_title(f"Pickaxe {self.list_channels()}")
+        self.draw()
+    def __saved_update_draw(self):
+        self.draw_stream()
+        for pick in self.channel_picks():
+            self.draw_flag(pick, self.arrival_for_pick(pick))
+        self.ax.set_ylabel("")
 
+        self.ax.relim()
+        self.fig.canvas.draw_idle()
     def do_finish(self):
         if self.finishFn is not None:
             self.finishFn(self.qmlevent, self.stream)
@@ -71,12 +87,12 @@ class PickSeis:
             color = "blue"
         (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
         label = None
+        label_str = "pick"
         if arrival is not None:
-            label = self.ax.text(x[1], mean+hw*0.9, arrival.phase, color=color, animated=True)
+            label_str = arrival.phase
         elif pick.phase_hint is not None:
-            label = self.ax.text(x[1], mean+hw*0.9, pick.phase_hint, color=color, animated=True)
-        else:
-            label = self.ax.text(x[1], mean+hw*0.9, "pick")
+            label_str = pick.phase_hint
+        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color, animated=True)
         self.bm.add_flag_artist(ln)
         self.bm.add_flag_artist(label)
     def do_pick(self, event, phase="pick"): #Defines what happens when you click on a sesismogram; saves pick to array
@@ -98,21 +114,24 @@ class PickSeis:
         self.qmlevent.picks.append(p)
         self.draw_flag(p)
         self.bm.update()
-    def do_filter(self, idx):
-        print(f"do filter {idx}  {self.curr_filter}")
+    def clear_trace(self):
         for artist in self.bm._trace_artists:
             artist.remove()
             self.bm._trace_artists.remove(artist)
             self.bm._artists.remove(artist)
-
+    def clear_flags(self):
+        for artist in self.bm._flag_artists:
+            artist.remove()
+            self.bm._flag_artists.remove(artist)
+            self.bm._artists.remove(artist)
+    def do_filter(self, idx):
+        self.clear_trace()
         if idx < 0 or idx >= len(self.filters):
             self._filtered_stream = self.stream
             self.curr_filter = -1
-            print("dif orignal data")
         else:
             self._filtered_stream = self.stream.copy()
             self.filters[idx]['fn'](self._filtered_stream)
-            print(f"did filter {self.filters[idx]['name']}")
             self.curr_filter = idx
         self.draw_stream()
         if self.curr_filter != -1:
@@ -122,12 +141,15 @@ class PickSeis:
 
         self.ax.relim()
         self.fig.canvas.draw_idle()
-
+    def close(self):
+        plt.close()
     def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
         if event.key=="q":
-            print("Finished picking, return picks")
+            print("Finished picking")
             self.do_finish()
-            plt.close()
+            self.do_close()
+        elif event.key == "n" or event.key == "v":
+            self.do_finish()
         elif event.key == "c":
             if event.inaxes is not None:
                 self.do_pick(event)
@@ -140,7 +162,6 @@ class PickSeis:
         elif event.key == "d":
             print(self.display_picks())
         elif event.key == "f":
-            print(f"f key filter {self.curr_filter}")
             self.do_filter(self.curr_filter+1)
     def list_channels(self):
         chans = ""

@@ -4,10 +4,11 @@ Seismic phase picker
 # Keys
 
 - c create generic, unnamed, pick
-- a create pick and set phase_hint to "P"
+- a (or p) create pick and set phase_hint to "P"
 - s create pick and set phase_hint to "S"
 - d to display current picks
 - f toggle to next filter
+- v (or n) save, but don't quite, ie go to next
 - q quit and save
 
 # build hints

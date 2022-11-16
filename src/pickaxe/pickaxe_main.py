@@ -4,16 +4,35 @@ from .pick_seismograms import PickSeis
 import obspy
 from obspy.core.event.base import CreationInfo
 import IPython
+import sys
 
 from traitlets.config import Config
 
+import argparse
+
+
+def do_parseargs():
+    parser = argparse.ArgumentParser(
+        description="Pickaxe, really simple seismic phase picker."
+    )
+    parser.add_argument(
+        "-v", "--verbose", help="increase output verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "-l",
+        "--loader",
+        required=False,
+        help="Initialization loader script, run at startup",
+    )
+    return parser.parse_args()
 
 def main():
     print("Hi PickAxe!")
 
+    args = do_parseargs()
+
     c = Config()
     c.InteractiveShellApp.exec_lines = [
-        'print("\\nimporting some things\\n")',
         'import math',
         'from obspy.core.event.base import CreationInfo',
         'import obspy',
@@ -22,8 +41,14 @@ def main():
         "plt.rcParams['toolbar'] = 'None'",
         "plt.rcParams['keymap.fullscreen'].remove('f')",
     ]
+    if args.loader:
+        c.InteractiveShellApp.exec_lines.append(f"%run -i {args.loader}")
     c.InteractiveShell.colors = 'LightBG'
     c.InteractiveShell.confirm_exit = False
     c.TerminalIPythonApp.display_banner = False
     IPython.start_ipython(argv=[], config=c)
     #embed()
+
+
+if __name__ == "__main__":
+    main()

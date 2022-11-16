@@ -24,11 +24,25 @@ filters = [
     { "name": "highpass", "fn": hpfilter},
 ]
 
+
+curr_idx = 0
+pickaxe = None
+
 def dosave(qmlevent, stream):
+    global curr_idx
+    global pickaxe
     station_code = stream[0].stats.station
     out_cat = obspy.Catalog([qmlevent])
     out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
-
+    curr_idx += 1
+    print(f"load {curr_idx} of {len(station_codes)}")
+    if curr_idx < len(station_codes):
+        print(f"load {curr_idx}  {station_codes[curr_idx]}")
+        st = obspy.read(f'{station_codes[curr_idx]}.mseed')
+        preprocess(st)
+        pickaxe.update_data(st, catalog[0])
+    else:
+        pickaxe.close()
 
 def pick_station(station_code, qmlevent, creation_info):
     st = obspy.read(f'{station_code}.mseed')
@@ -46,4 +60,4 @@ evt_qml = "elgin.qml"
 catalog = obspy.read_events(evt_qml)
 info = CreationInfo(author="Jane Smith", version="0.0.1")
 
-p = pick_station(station_codes[0], catalog[0], info)
+pickaxe = pick_station(station_codes[0], catalog[0], info)
