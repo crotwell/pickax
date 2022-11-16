@@ -14,16 +14,17 @@ class PickSeis:
             self.qmlevent = obspy.core.event.Event()
         self.start = self.stream[0].stats.starttime
         self.finishFn = finishFn
+        self.creation_info = None
     def do_finish(self):
         if self.finishFn is not None:
             self.finishFn(self.qmlevent, self.stream)
     def draw(self):
         # make a new figure
         self.fig, self.ax = plt.subplots()
+        self.bm = BlitManager(self.fig.canvas, [])
         self.ax.set_xlabel('seconds')
         stats = self.stream[0].stats
         self.ax.set_title(f"Pickaxe {stats.network}_{stats.station}_{stats.location}_{stats.channel}")
-        self.bm = BlitManager(self.fig.canvas, [])
         # add lines
         for trace in self.stream:
             (ln,) = self.ax.plot(trace.times(),trace.data,color="black", lw=1, animated=True)
@@ -67,23 +68,39 @@ class PickSeis:
             label = self.ax.text(x[1], mean+hw*0.9, "pick")
         self.bm.add_artist(ln)
         self.bm.add_artist(label)
-    def do_pick(self, event): #Defines what happens when you click on a sesismogram; saves pick to array
-        global ix
-        ix=event.xdata
+    def do_pick(self, event, phase="pick"): #Defines what happens when you click on a sesismogram; saves pick to array
         p = obspy.core.event.origin.Pick()
-        p.time = self.start + ix
+        p.phase_hint = phase
+        p.time = self.start + event.xdata
         p.waveform_id = obspy.core.event.base.WaveformStreamID(network_code=self.stream[0].stats.network,
                                                                station_code=self.stream[0].stats.station,
                                                                location_code=self.stream[0].stats.location,
                                                                channel_code=self.stream[0].stats.channel)
+        if self.creation_info is not None:
+            p.creation_info = obspy.core.event.base.CreationInfo(
+                agency_id=self.creation_info.agency_id,
+                agency_uri=self.creation_info.agency_uri,
+                author=self.creation_info.author,
+                author_uri=self.creation_info.author_uri,
+                creation_time=obspy.UTCDateTime(),
+                )
         self.qmlevent.picks.append(p)
         self.draw_flag(p)
         self.bm.update()
     def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
-        if event.key==" ":
+        if event.key=="q":
             print("Finished picking, return picks")
             self.do_finish()
             plt.close()
-        elif event.key == "p":
+        elif event.key == "m":
             if event.inaxes is not None:
                 self.do_pick(event)
+        elif event.key == "p":
+            if event.inaxes is not None:
+                self.do_pick(event, phase="P")
+        elif event.key == "s":
+            if event.inaxes is not None:
+                self.do_pick(event, phase="S")
+    def print_picks(self):
+        for p in self.qmlevent.picks:
+            print(f"{p.phase_hint} {p.time}")
