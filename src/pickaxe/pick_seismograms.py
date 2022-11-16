@@ -21,7 +21,8 @@ class PickSeis:
         # make a new figure
         self.fig, self.ax = plt.subplots()
         self.ax.set_xlabel('seconds')
-        self.ax.set_title('Pickaxe')
+        stats = self.stream[0].stats
+        self.ax.set_title(f"Pickaxe {stats.network}_{stats.station}_{stats.location}_{stats.channel}")
         self.bm = BlitManager(self.fig.canvas, [])
         # add lines
         for trace in self.stream:
