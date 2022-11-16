@@ -20,6 +20,7 @@ def main():
         'from pickaxe import PickSeis',
         'import matplotlib.pyplot as plt',
         "plt.rcParams['toolbar'] = 'None'",
+        "plt.rcParams['keymap.fullscreen'].remove('f')",
     ]
     c.InteractiveShell.colors = 'LightBG'
     c.InteractiveShell.confirm_exit = False

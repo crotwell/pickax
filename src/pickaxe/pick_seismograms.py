@@ -15,29 +15,34 @@ class PickSeis:
         self.start = self.stream[0].stats.starttime
         self.finishFn = finishFn
         self.creation_info = None
+        self.filters = [ ]
+        self.curr_filter = -1
+        self._filtered_stream = None
+        self.fig, self.ax = plt.subplots()
+        self.bm = BlitManager(self.fig.canvas, [])
+
     def do_finish(self):
         if self.finishFn is not None:
             self.finishFn(self.qmlevent, self.stream)
     def draw(self):
-        # make a new figure
-        self.fig, self.ax = plt.subplots()
-        self.bm = BlitManager(self.fig.canvas, [])
         self.ax.set_xlabel('seconds')
         stats = self.stream[0].stats
         self.ax.set_title(f"Pickaxe {self.list_channels()}")
         # add lines
-        for trace in self.stream:
-            (ln,) = self.ax.plot(trace.times(),trace.data,color="black", lw=1, animated=True)
-            self.bm.add_artist(ln)
-
+        self.draw_stream()
         for pick in self.channel_picks():
             self.draw_flag(pick, self.arrival_for_pick(pick))
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
-
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
+    def draw_stream(self):
+        draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
+        for trace in draw_stream:
+            (ln,) = self.ax.plot(trace.times(),trace.data,color="black", lw=0.5, animated=True)
+            self.bm.add_trace_artist(ln)
+
     def arrival_for_pick(self, pick):
         for o in self.qmlevent.origins:
             for a in o.arrivals:
@@ -72,8 +77,8 @@ class PickSeis:
             label = self.ax.text(x[1], mean+hw*0.9, pick.phase_hint, color=color, animated=True)
         else:
             label = self.ax.text(x[1], mean+hw*0.9, "pick")
-        self.bm.add_artist(ln)
-        self.bm.add_artist(label)
+        self.bm.add_flag_artist(ln)
+        self.bm.add_flag_artist(label)
     def do_pick(self, event, phase="pick"): #Defines what happens when you click on a sesismogram; saves pick to array
         p = obspy.core.event.origin.Pick()
         p.phase_hint = phase
@@ -93,6 +98,31 @@ class PickSeis:
         self.qmlevent.picks.append(p)
         self.draw_flag(p)
         self.bm.update()
+    def do_filter(self, idx):
+        print(f"do filter {idx}  {self.curr_filter}")
+        for artist in self.bm._trace_artists:
+            artist.remove()
+            self.bm._trace_artists.remove(artist)
+            self.bm._artists.remove(artist)
+
+        if idx < 0 or idx >= len(self.filters):
+            self._filtered_stream = self.stream
+            self.curr_filter = -1
+            print("dif orignal data")
+        else:
+            self._filtered_stream = self.stream.copy()
+            self.filters[idx]['fn'](self._filtered_stream)
+            print(f"did filter {self.filters[idx]['name']}")
+            self.curr_filter = idx
+        self.draw_stream()
+        if self.curr_filter != -1:
+            self.ax.set_ylabel(self.filters[idx]['name'])
+        else:
+            self.ax.set_ylabel("")
+
+        self.ax.relim()
+        self.fig.canvas.draw_idle()
+
     def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
         if event.key=="q":
             print("Finished picking, return picks")
@@ -109,6 +139,9 @@ class PickSeis:
                 self.do_pick(event, phase="S")
         elif event.key == "d":
             print(self.display_picks())
+        elif event.key == "f":
+            print(f"f key filter {self.curr_filter}")
+            self.do_filter(self.curr_filter+1)
     def list_channels(self):
         chans = ""
         for tr in self.stream:

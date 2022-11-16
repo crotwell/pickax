@@ -7,7 +7,22 @@
 
 def preprocess(stream):
     stream.detrend()
-    stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
+    #stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
+
+def lpfilter(stream):
+    return stream.filter('lowpass', freq=1.0,  corners=1, zerophase=True)
+
+def bpfilter(stream):
+    return stream.filter('bandpass', freqmin=.5, freqmax=5.0, corners=1, zerophase=True)
+
+def hpfilter(stream):
+    return stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
+
+filters = [
+    { "name": "lowpass_1", "fn": lpfilter},
+    { "name": "bandpass", "fn": bpfilter},
+    { "name": "highpass", "fn": hpfilter},
+]
 
 def dosave(qmlevent, stream):
     station_code = stream[0].stats.station
@@ -21,6 +36,7 @@ def pick_station(station_code, qmlevent, creation_info):
 
     pickaxe = PickSeis(st, qmlevent=qmlevent, finishFn=dosave)
     pickaxe.creation_info = info
+    pickaxe.filters = filters # allows toggling between fitlers
     pickaxe.draw()
     return pickaxe
     # on q, dosave will be called

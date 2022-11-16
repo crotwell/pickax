@@ -16,6 +16,8 @@ class BlitManager:
         self.canvas = canvas
         self._bg = None
         self._artists = []
+        self._trace_artists = []
+        self._flag_artists = []
 
         for a in animated_artists:
             self.add_artist(a)
@@ -30,7 +32,12 @@ class BlitManager:
                 raise RuntimeError
         self._bg = cv.copy_from_bbox(cv.figure.bbox)
         self._draw_animated()
-
+    def add_trace_artist(self, art):
+        self.add_artist(art)
+        self._trace_artists.append(art)
+    def add_flag_artist(self, art):
+        self.add_artist(art)
+        self._flag_artists.append(art)
     def add_artist(self, art):
         """
         Add an artist to be managed.

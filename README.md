@@ -7,6 +7,7 @@ Seismic phase picker
 - a create pick and set phase_hint to "P"
 - s create pick and set phase_hint to "S"
 - d to display current picks
+- f toggle to next filter
 - q quit and save
 
 # build hints
