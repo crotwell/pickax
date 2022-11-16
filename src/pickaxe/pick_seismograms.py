@@ -147,7 +147,7 @@ class PickSeis:
         if event.key=="q":
             print("Finished picking")
             self.do_finish()
-            self.do_close()
+            self.close()
         elif event.key == "n" or event.key == "v":
             self.do_finish()
         elif event.key == "c":
