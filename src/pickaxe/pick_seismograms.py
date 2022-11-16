@@ -38,10 +38,6 @@ class PickSeis:
                         self.draw_flag(pick, a)
                         found = True
                         break
-                    else:
-                        print(f"no match: {pick.resource_id}  {a.pick_id}")
-                        print(f"pick: {pick}")
-                        print(f"arr: {a}")
             if not found:
                 self.draw_flag(pick)
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
