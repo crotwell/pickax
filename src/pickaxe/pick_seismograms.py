@@ -120,8 +120,17 @@ class PickSeis:
     def display_picks(self):
         s = self.list_channels()
         s += "\n"
+        if self.qmlevent is not None:
+            s+= f"{self.qmlevent.short_str()}\n"
         for p in self.channel_picks():
             a = self.arrival_for_pick(p)
             pname = a.phase if a is not None else p.phase_hint
-            s = f"{s}\n{pname} {p.time}"
+            isArr = "" if a is None else "Arrival"
+            author = ""
+            if p.creation_info.agency_id is not None:
+                author += p.creation_info.agency_id+" "
+            if p.creation_info.author is not None:
+                author += p.creation_info.author+ " "
+            author = author.strip()
+            s = f"{s}\n{pname} {p.time} {author} {isArr}"
         return s
