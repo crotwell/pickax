@@ -1,6 +1,14 @@
 # pickaxe
 Seismic phase picker
 
+# Start
+
+For example, using simple.py to initialize pickaxe, load data and open the picker window:
+
+```
+pickaxe -l simple.py
+```
+
 # Keys
 
 - c create generic, unnamed, pick
