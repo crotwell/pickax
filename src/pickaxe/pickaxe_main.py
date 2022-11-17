@@ -1,6 +1,6 @@
 from IPython import embed;
 from IPython.core.getipython import get_ipython
-from .pick_seismograms import PickSeis
+from .pickaxe import PickAxe
 import obspy
 from obspy.core.event.base import CreationInfo
 import IPython

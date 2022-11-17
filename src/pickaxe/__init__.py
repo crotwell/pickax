@@ -1,7 +1,7 @@
-from .pick_seismograms import PickSeis
+from .pickaxe import PickAxe
 from .blit_manager import BlitManager
 __all__ = [
-    PickSeis,
+    PickAxe,
     BlitManager,
 
 ]
