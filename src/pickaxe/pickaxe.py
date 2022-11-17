@@ -37,7 +37,7 @@ class PickAxe:
             self.qmlevent = qmlevent
         else:
             self.qmlevent = obspy.core.event.Event()
-        self.start = self.stream[0].stats.starttime
+        self.start = self.calc_start()
         self.curr_filter = -1
         self._filtered_stream = None
     def update_data(self, stream, qmlevent=None):
@@ -73,7 +73,7 @@ class PickAxe:
                 print("Goodbye.")
                 sys.exit(0)
     def draw(self):
-        self.ax.set_xlabel('seconds')
+        self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
         self.ax.set_title(f"Pickaxe {self.list_channels()}")
         # add lines
@@ -233,6 +233,11 @@ class PickAxe:
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
 
             self.fig.canvas.draw_idle()
+        elif event.key=="t":
+            offset = event.xdata
+            time = self.start + offset
+            amp = event.ydata
+            print(f"Time: {time} ({offset})  Amp: {amp}")
         elif event.key=="e":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
@@ -297,3 +302,9 @@ class PickAxe:
             author = author.strip()
             s = f"{s}\n{pname} {p.time} {author} {isArr}"
         return s
+    def calc_start(self):
+        start = self.stream[0].stats.starttime
+        for tr in self.stream:
+            if tr.stats.starttime < start:
+                start = tr.stats.starttime
+        return start

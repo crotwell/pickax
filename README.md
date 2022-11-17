@@ -43,6 +43,7 @@ pickaxe -s JKYD.mseed
 - X, zoom out
 - w shift left (west)
 - e shift right (east)
+- t print current mouse time and amplitude
 - q finish current seis and quit
 
 # Configuration
