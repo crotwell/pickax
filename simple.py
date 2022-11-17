@@ -9,13 +9,13 @@ def preprocess(stream):
     stream.detrend()
     #stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
-def lpfilter(original_stream, current_stream, prevFilter):
+def lpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('lowpass', freq=1.0,  corners=1, zerophase=True)
 
-def bpfilter(original_stream, current_stream, prevFilter):
+def bpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('bandpass', freqmin=.5, freqmax=5.0, corners=1, zerophase=True)
 
-def hpfilter(original_stream, current_stream, prevFilter):
+def hpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
 filters = [
