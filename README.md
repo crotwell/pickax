@@ -48,13 +48,16 @@ pickaxe -s JKYD.mseed
 
 # Configuration
 
-PickAxe tries to be very simple, a pickaxe is good for digging a hole in
+PickAxe tries to be very simple and do just one thing, just like
+a pickaxe is good for digging a hole in
 red clay, but is just one of the tools in your toolshed. So don't forget
 to use your shovels, screwdrivers and lawnmowers for the things they do better.
 Basically all data management is handed off to the startup
 script. By setting the finishFn, you can save picks however you want (or not
 at all), and load in the next seismogram for display. Setting the filters
 allows toggling between different ways of processing the seismogram.
+The creation_info provides default creation info for the pick,
+primarily for author or agency_id, defaulting to `author=os.getlogin()`.
 
 # Filter functions
 

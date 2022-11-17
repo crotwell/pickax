@@ -1,4 +1,5 @@
 import sys
+import os
 import obspy
 from obspy import read
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ class PickAxe:
     stream -- usually a waveform for a single channel
     qmlevent -- optional QuakeML Event to store picks in, created if not supplied
     finishFn -- a callback function for when the next (v) or prev (r) keys are pressed
-    createion_info -- default creation info for the pick, primarily for author or agency_id
+    creation_info -- default creation info for the pick, primarily for author or agency_id
     filters -- list of filters, f cycles through these redrawing the waveform
     """
     def __init__(self,
@@ -26,6 +27,10 @@ class PickAxe:
         self.creation_info = creation_info
         self.filters = filters
         self._init_data_(stream, qmlevent)
+        if creation_info is None and os.getlogin() is not None:
+            self.creation_info = obspy.core.event.base.CreationInfo(
+                author=os.getlogin()
+                )
         self.fig, self.ax = plt.subplots()
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
