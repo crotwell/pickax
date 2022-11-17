@@ -57,9 +57,12 @@ def pick_station(station_code, qmlevent, creation_info):
     st = obspy.read(f'{station_code}.mseed')
     preprocess(st)
 
-    pickaxe = PickSeis(st, qmlevent=qmlevent, finishFn=dosave)
-    pickaxe.creation_info = info
-    pickaxe.filters = filters # allows toggling between fitlers
+    pickaxe = PickAxe(st,
+                      qmlevent=qmlevent,
+                      finishFn=dosave,
+                      creation_info = info,
+                      filters = filters # allows toggling between fitlers
+                      )
     pickaxe.draw()
     return pickaxe
     # on q, dosave will be called

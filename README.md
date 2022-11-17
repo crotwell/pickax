@@ -1,7 +1,23 @@
-# pickaxe
-Seismic phase picker
+# PickAxe
+
+PickAxe: a simple seismic picker, when you just need to dig a few
+arrivals out of the red clay.
 
 # Start
+
+```
+pickaxe -h                   
+Hi PickAxe!
+usage: pickaxe [-h] [-v] [-l LOADER]
+
+Pickaxe, really simple seismic phase picker.
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         increase output verbosity
+  -l LOADER, --loader LOADER
+                        Initialization loader script, run at startup
+```
 
 For example, using simple.py to initialize pickaxe, load data and open the picker window:
 
@@ -22,6 +38,7 @@ pickaxe -l simple.py
 - q quit and save
 
 # build hints
+
 ```
 conda create -n pickaxe python=3.10
 conda activate pickaxe

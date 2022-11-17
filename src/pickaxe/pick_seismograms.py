@@ -5,11 +5,26 @@ import matplotlib.pyplot as plt
 from .blit_manager import BlitManager
 
 
-class PickSeis:
-    def __init__(self, stream, qmlevent=None, finishFn=None):
+class PickAxe:
+    """
+    PickAxe, a simple seismic picker, when you just need to dig a few
+    arrivals out of the red clay.
+
+    stream -- usually a waveform for a single channel
+    qmlevent -- optional QuakeML Event to store picks in, created if not supplied
+    finishFn -- a callback function for when the next (v) or prev (r) keys are pressed
+    createion_info -- default creation info for the pick, primarily for author or agency_id
+    filters -- list of filters, f cycles through these redrawing the waveform
+    """
+    def __init__(self,
+                 stream,
+                 qmlevent=None,
+                 finishFn=None,
+                 creation_info=None,
+                 filters = []):
         self.finishFn = finishFn
-        self.creation_info = None
-        self.filters = [ ]
+        self.creation_info = creation_info
+        self.filters = filters
         self._init_data_(stream, qmlevent)
         self.fig, self.ax = plt.subplots()
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
@@ -26,6 +41,9 @@ class PickSeis:
         self.curr_filter = -1
         self._filtered_stream = None
     def update_data(self, stream, qmlevent=None):
+        """
+        Updates waveform and optionally earthquake and redraws.
+        """
         self._init_data_(stream, qmlevent)
         self.clear_trace()
         self.clear_flags()
@@ -41,6 +59,12 @@ class PickSeis:
         self.ax.relim()
         self.fig.canvas.draw_idle()
     def do_finish(self, command):
+        """
+        Runs the supplied finish function with earthquake, stream and the
+        next command. Command will be one of quit, next, prev. Generally
+        the finish function is responsible for calling update_data with
+        the next or previous seismogram.
+        """
         if self.finishFn is not None:
             self.finishFn(self.qmlevent, self.stream, command)
         else:
@@ -63,22 +87,38 @@ class PickSeis:
             self.bm.add_trace_artist(ln)
 
     def arrival_for_pick(self, pick):
+        """
+        Finds a matching arrival for the pick within the origins in the
+        earthquake. If more than one match, the first is returned, if none
+        then None is returned.
+        """
         for o in self.qmlevent.origins:
             for a in o.arrivals:
                 if pick.resource_id.id == a.pick_id.id:
                     return a
         return None
     def station_picks(self):
+        """
+        Finds all picks in the earthquake whose waveform_id matches the
+        streams network and station codes.
+        """
         sta_code = self.stream[0].stats.station
         net_code = self.stream[0].stats.network
         return filter(lambda p: p.waveform_id.network_code == net_code and p.waveform_id.station_code == sta_code, self.qmlevent.picks)
     def channel_picks(self):
+        """
+        Finds all picks in the earthquake whose waveform_id matches the
+        streams network, station, location and channel codes.
+        """
         loc_code = self.stream[0].stats.location
         chan_code = self.stream[0].stats.channel
         sta_picks = self.station_picks()
         return filter(lambda p: p.waveform_id.location_code == loc_code and p.waveform_id.channel_code == chan_code, sta_picks)
 
     def draw_flag(self, pick, arrival=None):
+        """
+        Draws flages for each pick.
+        """
         at_time = pick.time - self.start
         xmin, xmax, ymin, ymax = self.ax.axis()
         mean = (ymin+ymax)/2
@@ -98,7 +138,11 @@ class PickSeis:
         label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color, animated=True)
         self.bm.add_flag_artist(ln)
         self.bm.add_flag_artist(label)
-    def do_pick(self, event, phase="pick"): #Defines what happens when you click on a sesismogram; saves pick to array
+    def do_pick(self, event, phase="pick"):
+        """
+        Creates a pick based on a gui event, like keypress and mouse position.
+        Optionally give the pick a phase name, defaults to "pick".
+        """
         p = obspy.core.event.origin.Pick()
         p.phase_hint = phase
         p.time = self.start + event.xdata
@@ -118,16 +162,25 @@ class PickSeis:
         self.draw_flag(p)
         self.bm.update()
     def clear_trace(self):
+        """
+        Clears the waveforms from the display.
+        """
         for artist in self.bm._trace_artists:
             artist.remove()
             self.bm._artists.remove(artist)
         self.bm._trace_artists = []
     def clear_flags(self):
+        """
+        Clears pick flags from the display.
+        """
         for artist in self.bm._flag_artists:
             artist.remove()
             self.bm._artists.remove(artist)
         self.bm._flag_artists = []
     def do_filter(self, idx):
+        """
+        Applies the idx-th filter to the waveform and redraws.
+        """
         self.clear_trace()
         if idx < 0 or idx >= len(self.filters):
             self._filtered_stream = self.stream
@@ -145,8 +198,14 @@ class PickSeis:
         self.ax.relim()
         self.fig.canvas.draw_idle()
     def close(self):
+        """
+        Close the window, goodnight moon.
+        """
         plt.close()
-    def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
+    def on_key(self, event):
+        """
+        Event handler for key presses.
+        """
         if event.key!="x":
             self._prev_zoom_time = None
         else:
@@ -186,6 +245,10 @@ class PickSeis:
         elif event.key == "f":
             self.do_filter(self.curr_filter+1)
     def list_channels(self):
+        """
+        Lists the channel codes for all traces in the stream, removing duplicates.
+        Usually all traces will be from a single channel.
+        """
         chans = ""
         for tr in self.stream:
             stats = tr.stats
@@ -194,6 +257,10 @@ class PickSeis:
                 chans = f"{chans} {nslc}"
         return chans.strip()
     def display_picks(self):
+        """
+        Creates a string showing the current channels, earthquake and all the
+        picks on the current stream.
+        """
         s = self.list_channels()
         s += "\n"
         if self.qmlevent is not None:
