@@ -2,7 +2,9 @@ import sys
 import os
 import obspy
 from obspy import read
+from IPython import get_ipython
 import matplotlib.pyplot as plt
+
 from .blit_manager import BlitManager
 
 
@@ -77,7 +79,8 @@ class PickAxe:
             self.close()
             if command == "quit":
                 print("Goodbye.")
-                sys.exit(0)
+                ip = get_ipython()
+                ip.ask_exit()
     def draw(self):
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
@@ -255,9 +258,7 @@ class PickAxe:
             self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
             self.fig.canvas.draw_idle()
         elif event.key=="q":
-            print("Finished picking")
             self.do_finish("quit")
-            self.close()
         elif event.key == "n" or event.key == "v":
             self.do_finish("next")
         elif event.key == "r":

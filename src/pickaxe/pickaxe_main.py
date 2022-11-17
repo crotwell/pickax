@@ -56,7 +56,6 @@ def main():
     c.InteractiveShell.confirm_exit = False
     c.TerminalIPythonApp.display_banner = False
     IPython.start_ipython(argv=[], config=c)
-    #embed()
 
 
 if __name__ == "__main__":
