@@ -1,4 +1,4 @@
-
+import sys
 import obspy
 from obspy import read
 import matplotlib.pyplot as plt
@@ -69,6 +69,9 @@ class PickAxe:
             self.finishFn(self.qmlevent, self.stream, command)
         else:
             self.close()
+            if command == "quit":
+                print("Goodbye.")
+                sys.exit(0)
     def draw(self):
         self.ax.set_xlabel('seconds')
         stats = self.stream[0].stats
@@ -222,6 +225,16 @@ class PickAxe:
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
 
+            self.fig.canvas.draw_idle()
+        elif event.key=="e":
+            xmin, xmax, ymin, ymax = self.ax.axis()
+            xwidth = xmax - xmin
+            self.ax.set_xlim(xmin+xwidth/2, xmax+xwidth/2)
+            self.fig.canvas.draw_idle()
+        elif event.key=="w":
+            xmin, xmax, ymin, ymax = self.ax.axis()
+            xwidth = xmax - xmin
+            self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
             self.fig.canvas.draw_idle()
         elif event.key=="q":
             print("Finished picking")

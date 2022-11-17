@@ -6,9 +6,9 @@ arrivals out of the red clay.
 # Start
 
 ```
-pickaxe -h                   
+pickaxe -h
 Hi PickAxe!
-usage: pickaxe [-h] [-v] [-l LOADER]
+usage: pickaxe [-h] [-v] [-l LOADER] [-s SEIS]
 
 Pickaxe, really simple seismic phase picker.
 
@@ -17,12 +17,18 @@ options:
   -v, --verbose         increase output verbosity
   -l LOADER, --loader LOADER
                         Initialization loader script, run at startup
+  -s SEIS, --seis SEIS  Seismogram file, loaded at startup
 ```
 
-For example, using simple.py to initialize pickaxe, load data and open the picker window:
+For example, using `simple.py` to initialize pickaxe, load data and open the picker window:
 
 ```
 pickaxe -l simple.py
+```
+
+Or to view just a single file, ie quick look:
+```
+pickaxe -s JKYD.mseed
 ```
 
 # Keys
@@ -32,10 +38,17 @@ pickaxe -l simple.py
 - s create pick and set phase_hint to "S"
 - d to display current picks
 - f toggle to next filter
-- v (or n) save, but don't quite, ie go to next
+- v (or n) finish current seis, but don't quit, ie go to next
 - x, followed by second x zooms to selected time window
 - X, zoom out
-- q quit and save
+- w shift left (west)
+- e shift right (east)
+- q finish current seis and quit
+
+# Configuration
+
+PickAxe tries to be very simple, and offloads data management to the startup
+script.
 
 # build hints
 
@@ -43,7 +56,7 @@ pickaxe -l simple.py
 conda create -n pickaxe python=3.10
 conda activate pickaxe
 python3 -m pip install --upgrade build
-rm dist/* && python3 -m build
+rm -f dist/* && python3 -m build
 pip3 install dist/pickaxe-*-py3-none-any.whl --force-reinstall
 
 ```

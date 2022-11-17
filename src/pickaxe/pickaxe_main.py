@@ -24,11 +24,16 @@ def do_parseargs():
         required=False,
         help="Initialization loader script, run at startup",
     )
+    parser.add_argument(
+        "-s",
+        "--seis",
+        required=False,
+        help="Seismogram file, loaded at startup",
+    )
     return parser.parse_args()
 
 def main():
     print("Hi PickAxe!")
-
     args = do_parseargs()
 
     c = Config()
@@ -43,6 +48,10 @@ def main():
     ]
     if args.loader:
         c.InteractiveShellApp.exec_lines.append(f"%run -i {args.loader}")
+    elif args.seis:
+        c.InteractiveShellApp.exec_lines.append(f"st = obspy.read('{args.seis}')")
+        c.InteractiveShellApp.exec_lines.append(f"pickaxe = PickAxe(st)")
+        c.InteractiveShellApp.exec_lines.append(f"pickaxe.draw()")
     c.InteractiveShell.colors = 'LightBG'
     c.InteractiveShell.confirm_exit = False
     c.TerminalIPythonApp.display_banner = False
