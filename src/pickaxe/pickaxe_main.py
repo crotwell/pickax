@@ -36,7 +36,7 @@ def main():
         'import math',
         'from obspy.core.event.base import CreationInfo',
         'import obspy',
-        'from pickaxe import PickSeis',
+        'from pickaxe import PickAxe',
         'import matplotlib.pyplot as plt',
         "plt.rcParams['toolbar'] = 'None'",
         "plt.rcParams['keymap.fullscreen'].remove('f')",
