@@ -17,6 +17,8 @@ pickaxe -l simple.py
 - d to display current picks
 - f toggle to next filter
 - v (or n) save, but don't quite, ie go to next
+- x, followed by second x zooms to selected time window
+- X, zoom out
 - q quit and save
 
 # build hints

@@ -15,6 +15,7 @@ class PickSeis:
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self.bm = BlitManager(self.fig.canvas, [])
+        self._prev_zoom_time = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
         if qmlevent is not None:
@@ -119,8 +120,8 @@ class PickSeis:
     def clear_trace(self):
         for artist in self.bm._trace_artists:
             artist.remove()
-            self.bm._trace_artists.remove(artist)
             self.bm._artists.remove(artist)
+        self.bm._trace_artists = []
     def clear_flags(self):
         for artist in self.bm._flag_artists:
             artist.remove()
@@ -146,7 +147,24 @@ class PickSeis:
     def close(self):
         plt.close()
     def on_key(self, event):  #Defines what happens when you hit a key, Esc = exit + stop code, and Space = stop picking and return picks
-        if event.key=="q":
+        if event.key!="x":
+            self._prev_zoom_time = None
+        else:
+            # event.key=="x":
+            if self._prev_zoom_time is not None:
+                self.ax.set_xlim(self._prev_zoom_time, event.xdata)
+                self.fig.canvas.draw_idle()
+                self._prev_zoom_time = None
+            else:
+                self._prev_zoom_time = event.xdata
+
+        if event.key=="X":
+            xmin, xmax, ymin, ymax = self.ax.axis()
+            xwidth = xmax - xmin
+            self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
+
+            self.fig.canvas.draw_idle()
+        elif event.key=="q":
             print("Finished picking")
             self.do_finish("quit")
             self.close()
