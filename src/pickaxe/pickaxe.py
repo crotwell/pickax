@@ -4,6 +4,7 @@ import obspy
 from obspy import read
 from IPython import get_ipython
 import matplotlib.pyplot as plt
+from prompt_toolkit.application.current import get_app
 
 from .blit_manager import BlitManager
 
@@ -81,6 +82,7 @@ class PickAxe:
                 print("Goodbye.")
                 ip = get_ipython()
                 ip.ask_exit()
+                get_app().exit(exception=EOFError)
     def draw(self):
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
