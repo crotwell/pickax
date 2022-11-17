@@ -47,8 +47,34 @@ pickaxe -s JKYD.mseed
 
 # Configuration
 
-PickAxe tries to be very simple, and offloads data management to the startup
-script.
+PickAxe tries to be very simple, a pickaxe is good for digging a hole in
+red clay, but is just one of the tools in your toolshed. So don't forget
+to use your shovels, screwdrivers and lawnmowers for the things they do better.
+Basically all data management is handed off to the startup
+script. By setting the finishFn, you can save picks however you want (or not
+at all), and load in the next seismogram for display. Setting the filters
+allows toggling between different ways of processing the seismogram.
+
+# Filter functions
+
+Filters are often a way of applying actual time series filters, but can
+be anything. They are each a simple dictionary with a `name` and `fn`.
+The function will be called
+with four arguments. First is a copy of the original stream, so modification in
+place is safe. The second is the current filtered stream, so filters can build
+on the previous if that is what you want. Third is the name for the current
+filter function, and last is the filter index, just for reference.
+If a stream is returned, that becomes
+the current displayed stream, but if None is returned, then it assumes
+the original was modified in place.
+
+# Finish function
+
+The finish function is called whenever the user quits, goes to next or previous,
+ie `q`, `v` or `r`. It is called with three arguments, first is the QuakeML
+Event, which contains picks, including both new picks and any existing picks.
+Second is the current stream, useful to get the channel. Last is the command,
+one of "quit", "next", or "prev".
 
 # build hints
 

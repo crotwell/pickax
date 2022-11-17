@@ -189,8 +189,15 @@ class PickAxe:
             self._filtered_stream = self.stream
             self.curr_filter = -1
         else:
-            self._filtered_stream = self.stream.copy()
-            self.filters[idx]['fn'](self._filtered_stream)
+            filterFn = self.filters[idx]['fn']
+            orig_copy = self.stream.copy()
+            out_stream = filterFn(orig_copy, self._filtered_stream, self.filters[idx]['name'], idx )
+            if out_stream is not None:
+                # fun returned new stream
+                self._filtered_stream = out_stream
+            else:
+                # assume filtering done in place
+                self._filtered_stream = orig_copy
             self.curr_filter = idx
         self.draw_stream()
         if self.curr_filter != -1:
