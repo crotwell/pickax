@@ -97,7 +97,7 @@ class PickAxe:
     def draw_stream(self):
         draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         for trace in draw_stream:
-            (ln,) = self.ax.plot(trace.times(),trace.data,color="black", lw=0.5, animated=True)
+            (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5, animated=True)
             self.bm.add_trace_artist(ln)
 
     def arrival_for_pick(self, pick):
