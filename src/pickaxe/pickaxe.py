@@ -111,6 +111,16 @@ class PickAxe:
                 if pick.resource_id.id == a.pick_id.id:
                     return a
         return None
+    def amplitude_for_pick(self, pick):
+        """
+        Finds a matching amplitude for the pick within the
+        earthquake. If more than one match, the first is returned, if none
+        then None is returned.
+        """
+        for a in self.qmlevent.amplitudes:
+            if pick.resource_id.id == a.pick_id.id:
+                return a
+        return None
     def station_picks(self):
         """
         Finds all picks in the earthquake whose waveform_id matches the
@@ -158,6 +168,7 @@ class PickAxe:
         Optionally give the pick a phase name, defaults to "pick".
         """
         p = obspy.core.event.origin.Pick()
+        p.method_id = "PickAxe"
         p.phase_hint = phase
         p.time = self.start + event.xdata
         p.waveform_id = obspy.core.event.base.WaveformStreamID(network_code=self.stream[0].stats.network,
@@ -173,6 +184,22 @@ class PickAxe:
                 creation_time=obspy.UTCDateTime(),
                 )
         self.qmlevent.picks.append(p)
+        a = None
+        for tr in self.stream:
+            times = tr.times()
+            index = round(times.searchsorted(event.xdata))
+            if index >=0 and index < len(tr):
+                print(times[index])
+                print(tr.data[index])
+                a = obspy.core.event.magnitude.Amplitude()
+                a.generic_amplitude = tr.data[index]
+                a.pick_id = p.resource_id
+                a.waveform_id = p.waveform_id
+                if self.curr_filter != -1:
+                    a.filter_id = self.filters[self.curr_filter]['name']
+                a.creation_info = p.creation_info
+                self.qmlevent.amplitudes.append(a)
+                break
         self.draw_flag(p)
         self.bm.update()
     def clear_trace(self):
@@ -301,6 +328,9 @@ class PickAxe:
             s+= f"{self.qmlevent.short_str()}\n"
         for p in self.channel_picks():
             a = self.arrival_for_pick(p)
+            amp = self.amplitude_for_pick(p)
+            if amp is not None:
+                amp_str = f"amp: {amp.generic_amplitude}"
             pname = a.phase if a is not None else p.phase_hint
             isArr = "" if a is None else "Arrival"
             author = ""
@@ -309,7 +339,7 @@ class PickAxe:
             if p.creation_info.author is not None:
                 author += p.creation_info.author+ " "
             author = author.strip()
-            s = f"{s}\n{pname} {p.time} {author} {isArr}"
+            s = f"{s}\n{pname} {p.time} {p.time-self.start} {amp_str} {author} {isArr}"
         return s
     def calc_start(self):
         start = self.stream[0].stats.starttime
