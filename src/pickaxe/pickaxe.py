@@ -73,6 +73,7 @@ class PickAxe:
         if self.finishFn is not None:
             self.finishFn(self.qmlevent, self.stream, command)
         else:
+            print(self.display_picks())
             self.close()
             if command == "quit":
                 print("Goodbye.")

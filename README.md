@@ -62,7 +62,8 @@ primarily for author or agency_id, defaulting to `author=os.getlogin()`.
 # Filter functions
 
 Filters are often a way of applying actual time series filters, but can
-be anything. They are each a simple dictionary with a `name` and `fn`.
+be anything that modifies the waveform.
+They are each a simple dictionary with a `name` and `fn`.
 The function will be called
 with four arguments. First is a copy of the original stream, so modification in
 place is safe. The second is the current filtered stream, so filters can build
