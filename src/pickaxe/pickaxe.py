@@ -82,7 +82,11 @@ class PickAxe:
         """
         Updates waveform and optionally earthquake and redraws.
         """
-        self._init_data_(stream, qmlevent)
+        if qmlevent is not None:
+            self._init_data_(stream, qmlevent)
+        else:
+            # reuse current event
+            self._init_data_(stream, self.qmlevent)
         self.clear_trace()
         self.clear_flags()
         self.ax.clear()

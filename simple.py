@@ -1,15 +1,17 @@
 import os
 
-# to get some test data:
+# to get some test data, this uses an event in South Carolina,
+# near Lugoff-Elgin on Oct 31, 2022
+#
 # curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HHZ&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
 # curl -o JSC.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HHZ&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# LE event Oct 31, 2022
 # curl -o elgin.qml 'https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=se60414656&format=quakeml'
 
+# helper function, perhaps to preprocess the stream before picking
 def preprocess(stream):
     stream.detrend()
-    #stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
+# create a few filters, will be able to toggle between them with the 'f' key
 def lpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('lowpass', freq=1.0,  corners=1, zerophase=True)
 
@@ -25,10 +27,13 @@ filters = [
     { "name": "highpass", "fn": hpfilter},
 ]
 
-
+# remember who and where we are
 curr_idx = 0
 pickaxe = None
 
+# function called on quit, next or prev, allows saving of picks however you wish
+# here we save the quake as QuakeML, which will include the picks, and then
+# load the next seismogram if possible
 def dosave(qmlevent, stream, command):
     global curr_idx
     global pickaxe
@@ -53,11 +58,22 @@ def dosave(qmlevent, stream, command):
             return
         st = obspy.read(f'{station_codes[curr_idx]}.mseed')
         preprocess(st)
-        pickaxe.update_data(st, catalog[0])
+        # could update both stream and Qml Event
+        # pickaxe.update_data(st, catalog[0])
+        # or just the stream if the event is the same
+        pickaxe.update_data(st)
     else:
         pickaxe.close()
 
-def pick_station(station_code, qmlevent, creation_info):
+# helper function to check if files exist and start up PickAxe
+def pick_station(station_code, qmlevent_file, creation_info):
+    catalog = []
+    if not os.path.exists(f'{qmlevent_file}'):
+        print(f'file {qmlevent_file} does not seem to exist, skipping.')
+    else:
+        catalog = obspy.read_events(qmlevent_file)
+    qmlevent = catalog[0] if len(catalog) > 0 else None
+
     if not os.path.exists(f'{station_code}.mseed'):
         print(f'file {station_code}.mseed does not seem to exist.')
         return
@@ -67,21 +83,16 @@ def pick_station(station_code, qmlevent, creation_info):
     pickaxe = PickAxe(st,
                       qmlevent=qmlevent,
                       finishFn=dosave,
-                      creation_info = info,
+                      creation_info = creation_info,
                       filters = filters, # allows toggling between fitlers
                       figsize=(10,8)
                       )
     pickaxe.draw()
     return pickaxe
-    # on q, dosave will be called
 
+# get ready and...
 station_codes = ["JKYD", "JSC"]
 evt_qml = "elgin.qml"
-catalog = []
-if not os.path.exists(f'{evt_qml}'):
-    print(f'file {evt_qml} does not seem to exist.')
-else:
-    catalog = obspy.read_events(evt_qml)
 info = CreationInfo(author="Jane Smith", version="0.0.1")
-quake = catalog[0] if len(catalog) > 0 else None
-pickaxe = pick_station(station_codes[0], quake, info)
+# start digging!
+pickaxe = pick_station(station_codes[0], evt_qml, info)
