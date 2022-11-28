@@ -62,6 +62,8 @@ allows toggling between different ways of processing the seismogram.
 The creation_info provides default creation info for the pick,
 primarily for author or agency_id, defaulting to `author=os.getlogin()`.
 
+See [simple.py](https://raw.githubusercontent.com/crotwell/pickaxe/main/simple.py) for an example of setting up pickaxe and loading data.
+
 # Filter functions
 
 Filters are often a way of applying actual time series filters, but can
