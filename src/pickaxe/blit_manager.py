@@ -18,6 +18,7 @@ class BlitManager:
         self._artists = []
         self._trace_artists = []
         self._flag_artists = []
+        self._zoom_bounds = []
 
         for a in animated_artists:
             self.add_artist(a)
@@ -55,6 +56,15 @@ class BlitManager:
             raise RuntimeError
         art.set_animated(True)
         self._artists.append(art)
+    def set_zoom_bound(self, art):
+        self.add_artist(art)
+        self._zoom_bounds = [art]
+    def unset_zoom_bound(self):
+        for a in self._zoom_bounds:
+            a.remove()
+            self._artists.remove(a)
+        self._zoom_bounds = []
+
 
     def _draw_animated(self):
         """Draw all of the animated artists."""

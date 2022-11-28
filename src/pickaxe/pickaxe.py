@@ -1,6 +1,7 @@
 import sys
 import os
 import obspy
+import numpy
 from obspy import read
 from IPython import get_ipython
 import matplotlib.pyplot as plt
@@ -189,8 +190,6 @@ class PickAxe:
             times = tr.times()
             index = round(times.searchsorted(event.xdata))
             if index >=0 and index < len(tr):
-                print(times[index])
-                print(tr.data[index])
                 a = obspy.core.event.magnitude.Amplitude()
                 a.generic_amplitude = tr.data[index]
                 a.pick_id = p.resource_id
@@ -218,14 +217,18 @@ class PickAxe:
             artist.remove()
             self.bm._artists.remove(artist)
         self.bm._flag_artists = []
+        # also clear x zoom marker if present
+        self.bm.unset_zoom_bound()
     def do_filter(self, idx):
         """
         Applies the idx-th filter to the waveform and redraws.
         """
         self.clear_trace()
+        self.clear_flags()
         if idx < 0 or idx >= len(self.filters):
             self._filtered_stream = self.stream
             self.curr_filter = -1
+            self.ax.set_ylabel("")
         else:
             filterFn = self.filters[idx]['fn']
             orig_copy = self.stream.copy()
@@ -236,55 +239,93 @@ class PickAxe:
             else:
                 # assume filtering done in place
                 self._filtered_stream = orig_copy
+            self.ax.set_ylabel(self.filters[idx]['name'])
+            self.zoom_amp()
             self.curr_filter = idx
         self.draw_stream()
-        if self.curr_filter != -1:
-            self.ax.set_ylabel(self.filters[idx]['name'])
-        else:
-            self.ax.set_ylabel("")
+        self.fig.canvas.draw_idle()
 
-        self.ax.relim()
+        for pick in self.channel_picks():
+            self.draw_flag(pick, self.arrival_for_pick(pick))
+
         self.fig.canvas.draw_idle()
     def close(self):
         """
         Close the window, goodnight moon.
         """
         plt.close()
+    def zoom_amp(self):
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        calc_min = ymax
+        calc_max = ymin
+        tstart = self.start + xmin
+        tend = self.start + xmax
+        st = self._filtered_stream if self._filtered_stream is not None else self.stream
+        for tr in st:
+            tr_slice = tr.slice(tstart, tend)
+            if tr_slice is not None and tr_slice.data is not None:
+                calc_min = min(calc_min, tr_slice.data.min())
+                calc_max = max(calc_max, tr_slice.data.max())
+        if calc_min > calc_max:
+            # in case no trace in window
+            t = calc_max
+            calc_max = calc_min
+            calc_min = t
+        self.ax.set_ylim(calc_min, calc_max)
     def on_key(self, event):
         """
         Event handler for key presses.
         """
         if event.key!="x":
             self._prev_zoom_time = None
+            self.bm.unset_zoom_bound()
         else:
             # event.key=="x":
             if self._prev_zoom_time is not None:
-                self.ax.set_xlim(self._prev_zoom_time, event.xdata)
+                self.bm.unset_zoom_bound()
+                if event.xdata > self._prev_zoom_time:
+                    self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
+                else:
+                    self.ax.set_xlim(left=event.xdata, right=self._prev_zoom_time)
+                self.zoom_amp()
                 self.fig.canvas.draw_idle()
                 self._prev_zoom_time = None
             else:
                 self._prev_zoom_time = event.xdata
+                xmin, xmax, ymin, ymax = self.ax.axis()
+                mean = (ymin+ymax)/2
+                hw = 0.9*(ymax-ymin)/2
+                x = [event.xdata, event.xdata]
+                y = [mean-hw, mean+hw]
+                color = "black"
+                (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
+                self.bm.set_zoom_bound(ln)
+                self.bm.update()
 
         if event.key=="X":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
+            self.zoom_amp()
+            self.bm.unset_zoom_bound()
 
             self.fig.canvas.draw_idle()
         elif event.key=="t":
             offset = event.xdata
             time = self.start + offset
             amp = event.ydata
-            print(f"Time: {time} ({offset})  Amp: {amp}")
+            print(f"Time: {time} ({offset} s)  Amp: {amp}")
         elif event.key=="e":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin+xwidth/2, xmax+xwidth/2)
+            self.zoom_amp()
             self.fig.canvas.draw_idle()
         elif event.key=="w":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
+            self.zoom_amp()
             self.fig.canvas.draw_idle()
         elif event.key=="q":
             self.do_finish("quit")
@@ -332,18 +373,14 @@ class PickAxe:
             if amp is not None:
                 amp_str = f"amp: {amp.generic_amplitude}"
             pname = a.phase if a is not None else p.phase_hint
-            isArr = "" if a is None else "Arrival"
+            isArr = "Pick" if a is None else "Arrival"
             author = ""
             if p.creation_info.agency_id is not None:
                 author += p.creation_info.agency_id+" "
             if p.creation_info.author is not None:
                 author += p.creation_info.author+ " "
             author = author.strip()
-            s = f"{s}\n{pname} {p.time} {p.time-self.start} {amp_str} {author} {isArr}"
+            s = f"{s}\n{pname} {p.time} ({p.time-self.start} s) {amp_str} {author} {isArr}"
         return s
     def calc_start(self):
-        start = self.stream[0].stats.starttime
-        for tr in self.stream:
-            if tr.stats.starttime < start:
-                start = tr.stats.starttime
-        return start
+        return min([trace.stats.starttime for trace in self.stream])

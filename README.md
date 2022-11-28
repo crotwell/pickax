@@ -1,7 +1,9 @@
 # PickAxe
 
-PickAxe: a simple seismic picker, when you just need to dig a few
-arrivals out of the red clay.
+[![PyPI](https://img.shields.io/pypi/v/pickaxe)](https://pypi.org/project/pickaxe/)
+
+PickAxe: a simple seismic picker, when you just need to dig out a few
+arrivals.
 
 # Start
 
