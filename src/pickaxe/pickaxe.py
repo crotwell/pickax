@@ -240,8 +240,9 @@ class PickAxe:
                 # assume filtering done in place
                 self._filtered_stream = orig_copy
             self.ax.set_ylabel(self.filters[idx]['name'])
-            self.zoom_amp()
             self.curr_filter = idx
+
+        self.zoom_amp()
         self.draw_stream()
         self.fig.canvas.draw_idle()
 
@@ -343,9 +344,15 @@ class PickAxe:
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
         elif event.key == "d":
-            print(self.display_picks())
+            print(self.display_picks(author=self.creation_info.author))
+        elif event.key == "D":
+            print(self.display_picks(include_station=True))
         elif event.key == "f":
             self.do_filter(self.curr_filter+1)
+        elif event.key == "F":
+            if self.curr_filter < 0:
+                self.curr_filter = len(self.filters)
+            self.do_filter(self.curr_filter-1)
     def list_channels(self):
         """
         Lists the channel codes for all traces in the stream, removing duplicates.
@@ -358,7 +365,7 @@ class PickAxe:
             if nslc not in chans:
                 chans = f"{chans} {nslc}"
         return chans.strip()
-    def display_picks(self):
+    def display_picks(self, include_station=False, author=None):
         """
         Creates a string showing the current channels, earthquake and all the
         picks on the current stream.
@@ -367,20 +374,27 @@ class PickAxe:
         s += "\n"
         if self.qmlevent is not None:
             s+= f"{self.qmlevent.short_str()}\n"
-        for p in self.channel_picks():
+        pick_list = []
+        if include_station:
+            pick_list = self.station_picks()
+        else:
+            pick_list = self.channel_picks()
+        if author is not None:
+            pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
+        for p in pick_list:
             a = self.arrival_for_pick(p)
             amp = self.amplitude_for_pick(p)
             if amp is not None:
                 amp_str = f"amp: {amp.generic_amplitude}"
             pname = a.phase if a is not None else p.phase_hint
-            isArr = "Pick" if a is None else "Arrival"
+            isArr = ", Pick" if a is None else ", Arrival"
             author = ""
             if p.creation_info.agency_id is not None:
                 author += p.creation_info.agency_id+" "
             if p.creation_info.author is not None:
                 author += p.creation_info.author+ " "
             author = author.strip()
-            s = f"{s}\n{pname} {p.time} ({p.time-self.start} s) {amp_str} {author} {isArr}"
+            s = f"{s}\n{pname} {p.time} ({p.time-self.start} s) {amp_str} {author}{isArr}"
         return s
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])
