@@ -46,17 +46,19 @@ class PickAxe:
                  finishFn=None,
                  creation_info=None,
                  filters = [],
+                 figsize = (10,8),
                  keymap = {}):
         self._init_keymap(keymap)
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
+        self.figsize = figsize
         self._init_data_(stream, qmlevent)
         if creation_info is None and os.getlogin() is not None:
             self.creation_info = obspy.core.event.base.CreationInfo(
                 author=os.getlogin()
                 )
-        self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(figsize=self.figsize)
 #        self.fig.canvas.mpl_connect('button_press_event', lambda evt: self.onclick(evt))
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self.bm = BlitManager(self.fig.canvas, [])

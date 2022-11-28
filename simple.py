@@ -60,7 +60,8 @@ def pick_station(station_code, qmlevent, creation_info):
                       qmlevent=qmlevent,
                       finishFn=dosave,
                       creation_info = info,
-                      filters = filters # allows toggling between fitlers
+                      filters = filters, # allows toggling between fitlers
+                      figsize=(10,8)
                       )
     pickaxe.draw()
     return pickaxe
