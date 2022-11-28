@@ -5,6 +5,7 @@ import obspy
 from obspy.core.event.base import CreationInfo
 import IPython
 import sys
+import os
 
 from traitlets.config import Config
 
@@ -47,8 +48,14 @@ def main():
         "plt.rcParams['keymap.fullscreen'].remove('f')",
     ]
     if args.loader:
+        if not os.path.exists(args.loader):
+            print(f"File {args.loader} does not seem to exist, cowardly quitting...")
+            return
         c.InteractiveShellApp.exec_lines.append(f"%run -i {args.loader}")
     elif args.seis:
+        if not os.path.exists(args.seis):
+            print(f"File {args.seis} does not seem to exist, cowardly quitting...")
+            return
         c.InteractiveShellApp.exec_lines.append(f"st = obspy.read('{args.seis}')")
         c.InteractiveShellApp.exec_lines.append(f"pickaxe = PickAxe(st)")
         c.InteractiveShellApp.exec_lines.append(f"pickaxe.draw()")
