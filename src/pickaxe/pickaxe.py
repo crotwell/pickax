@@ -10,6 +10,24 @@ from prompt_toolkit.application.current import get_app
 from .blit_manager import BlitManager
 
 
+DEFAULT_KEYMAP = {
+    'c': "PICK_GENERIC",
+    'a': "PICK_P",
+    's': "PICK_S",
+    'd': "DISPLAY_PICKS",
+    'D': "DISPLAY_ALL_PICKS",
+    'f': "NEXT_FILTER",
+    'F': "PREV_FILTER",
+    'v': "GO_NEXT",
+    'r': "GO_PREV",
+    'q': "GO_QUIT",
+    'x': "ZOOM_IN",
+    'X': "ZOOM_OUT",
+    'w': "WEST",
+    'e': "EAST",
+    't': "CURR_MOUSE",
+}
+
 class PickAxe:
     """
     PickAxe, a simple seismic picker, when you just need to dig a few
@@ -20,13 +38,16 @@ class PickAxe:
     finishFn -- a callback function for when the next (v) or prev (r) keys are pressed
     creation_info -- default creation info for the pick, primarily for author or agency_id
     filters -- list of filters, f cycles through these redrawing the waveform
+    keymap -- optional dictionary of key to function
     """
     def __init__(self,
                  stream,
                  qmlevent=None,
                  finishFn=None,
                  creation_info=None,
-                 filters = []):
+                 filters = [],
+                 keymap = {}):
+        self._init_keymap(keymap)
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
@@ -49,6 +70,12 @@ class PickAxe:
         self.start = self.calc_start()
         self.curr_filter = -1
         self._filtered_stream = None
+    def _init_keymap(self, keymap):
+        self.keymap = {}
+        for k,v in DEFAULT_KEYMAP.items():
+            self.keymap[k] = v
+        for k,v in keymap.items():
+            self.keymap[k] = v
     def update_data(self, stream, qmlevent=None):
         """
         Updates waveform and optionally earthquake and redraws.
@@ -277,7 +304,11 @@ class PickAxe:
         """
         Event handler for key presses.
         """
-        if event.key!="x":
+        if event.key not in self.keymap:
+            if event.key != "shift":
+                print(f"unknown key function: {event.key}")
+            return
+        if self.keymap[event.key] != "ZOOM_IN":
             self._prev_zoom_time = None
             self.bm.unset_zoom_bound()
         else:
@@ -303,7 +334,7 @@ class PickAxe:
                 self.bm.set_zoom_bound(ln)
                 self.bm.update()
 
-        if event.key=="X":
+        if self.keymap[event.key] == "ZOOM_OUT":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
@@ -311,45 +342,45 @@ class PickAxe:
             self.bm.unset_zoom_bound()
 
             self.fig.canvas.draw_idle()
-        elif event.key=="t":
+        elif self.keymap[event.key] =="CURR_MOUSE":
             offset = event.xdata
             time = self.start + offset
             amp = event.ydata
             print(f"Time: {time} ({offset} s)  Amp: {amp}")
-        elif event.key=="e":
+        elif self.keymap[event.key] =="EAST":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin+xwidth/2, xmax+xwidth/2)
             self.zoom_amp()
             self.fig.canvas.draw_idle()
-        elif event.key=="w":
+        elif self.keymap[event.key] =="WEST":
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
             self.zoom_amp()
             self.fig.canvas.draw_idle()
-        elif event.key=="q":
+        elif self.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
-        elif event.key == "n" or event.key == "v":
+        elif self.keymap[event.key]  == "GO_NEXT":
             self.do_finish("next")
-        elif event.key == "r":
+        elif self.keymap[event.key]  == "GO_PREV":
             self.do_finish("prev")
-        elif event.key == "c":
+        elif self.keymap[event.key]  == "PICK_GENERIC":
             if event.inaxes is not None:
                 self.do_pick(event)
-        elif event.key == "a" or event.key == "p":
+        elif self.keymap[event.key]  == "PICK_P":
             if event.inaxes is not None:
                 self.do_pick(event, phase="P")
-        elif event.key == "s":
+        elif self.keymap[event.key]  == "PICK_S":
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
-        elif event.key == "d":
+        elif self.keymap[event.key]  == "DISPLAY_PICKS":
             print(self.display_picks(author=self.creation_info.author))
-        elif event.key == "D":
+        elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
-        elif event.key == "f":
+        elif self.keymap[event.key]  == "NEXT_FILTER":
             self.do_filter(self.curr_filter+1)
-        elif event.key == "F":
+        elif self.keymap[event.key]  == "PREV_FILTER":
             if self.curr_filter < 0:
                 self.curr_filter = len(self.filters)
             self.do_filter(self.curr_filter-1)
