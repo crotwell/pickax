@@ -34,7 +34,6 @@ def dosave(qmlevent, stream, command):
     station_code = stream[0].stats.station
     out_cat = obspy.Catalog([qmlevent])
     out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
-    print(f"go {command}")
     if command == "next":
         curr_idx += 1
     elif command == "prev":
