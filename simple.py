@@ -1,3 +1,4 @@
+import os
 
 # to get some test data:
 # curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HHZ&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
@@ -46,6 +47,10 @@ def dosave(qmlevent, stream, command):
         curr_idx = 0
     elif curr_idx < len(station_codes):
         print(f"load {curr_idx}  of {len(station_codes)}, {station_codes[curr_idx]}")
+        if not os.path.exists(f'{station_codes[curr_idx]}.mseed'):
+            print(f'file {station_codes[curr_idx]}.mseed does not seem to exist.')
+            pickaxe.close()
+            return
         st = obspy.read(f'{station_codes[curr_idx]}.mseed')
         preprocess(st)
         pickaxe.update_data(st, catalog[0])
@@ -53,6 +58,9 @@ def dosave(qmlevent, stream, command):
         pickaxe.close()
 
 def pick_station(station_code, qmlevent, creation_info):
+    if not os.path.exists(f'{station_code}.mseed'):
+        print(f'file {station_code}.mseed does not seem to exist.')
+        return
     st = obspy.read(f'{station_code}.mseed')
     preprocess(st)
 
@@ -69,7 +77,11 @@ def pick_station(station_code, qmlevent, creation_info):
 
 station_codes = ["JKYD", "JSC"]
 evt_qml = "elgin.qml"
-catalog = obspy.read_events(evt_qml)
+catalog = []
+if not os.path.exists(f'{evt_qml}'):
+    print(f'file {evt_qml} does not seem to exist.')
+else:
+    catalog = obspy.read_events(evt_qml)
 info = CreationInfo(author="Jane Smith", version="0.0.1")
-
-pickaxe = pick_station(station_codes[0], catalog[0], info)
+quake = catalog[0] if len(catalog) > 0 else None
+pickaxe = pick_station(station_codes[0], quake, info)
