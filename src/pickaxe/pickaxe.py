@@ -110,9 +110,9 @@ class PickAxe:
             self.close()
             if command == "quit":
                 print("Goodbye.")
-                ip = get_ipython()
-                ip.ask_exit()
-                get_app().exit(exception=EOFError)
+                #ip = get_ipython()
+                #ip.ask_exit()
+                #get_app().exit(exception=EOFError)
     def draw(self):
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
