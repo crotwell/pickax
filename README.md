@@ -38,8 +38,8 @@ pickaxe -s JKYD.mseed
 - c create generic, unnamed, pick
 - a (or p) create pick and set phase_hint to "P"
 - s create pick and set phase_hint to "S"
-- d to display current picks
-- f toggle to next filter
+- d/D to display author's picks/ all picks
+- f/F toggle to next/prev filter
 - v (or n) finish current seis, but don't quit, ie go to next
 - x, followed by second x zooms to selected time window
 - X, zoom out
