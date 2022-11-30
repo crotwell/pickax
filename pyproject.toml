@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pickaxe"
+name = "pickax"
 version = "0.1.0"
 authors = [
   { name="Philip Crotwell", email="crotwell@seis.sc.edu" },
@@ -24,8 +24,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/crotwell/pickaxe"
-"Bug Tracker" = "https://github.com/crotwell/pickaxe/issues"
+"Homepage" = "https://github.com/crotwell/pickax"
+"Bug Tracker" = "https://github.com/crotwell/pickax/issues"
 
 [project.scripts]
-    "pickaxe" = "pickaxe.pickaxe_main:main"
+    "pickax" = "pickax.pickax_main:main"

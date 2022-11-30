@@ -29,14 +29,14 @@ filters = [
 
 # remember who and where we are
 curr_idx = 0
-pickaxe = None
+pickax = None
 
 # function called on quit, next or prev, allows saving of picks however you wish
 # here we save the quake as QuakeML, which will include the picks, and then
 # load the next seismogram if possible
 def dosave(qmlevent, stream, command):
     global curr_idx
-    global pickaxe
+    global pickax
     station_code = stream[0].stats.station
     out_cat = obspy.Catalog([qmlevent])
     out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
@@ -54,18 +54,18 @@ def dosave(qmlevent, stream, command):
         print(f"load {curr_idx}  of {len(station_codes)}, {station_codes[curr_idx]}")
         if not os.path.exists(f'{station_codes[curr_idx]}.mseed'):
             print(f'file {station_codes[curr_idx]}.mseed does not seem to exist.')
-            pickaxe.close()
+            pickax.close()
             return
         st = obspy.read(f'{station_codes[curr_idx]}.mseed')
         preprocess(st)
         # could update both stream and Qml Event
-        # pickaxe.update_data(st, catalog[0])
+        # pickax.update_data(st, catalog[0])
         # or just the stream if the event is the same
-        pickaxe.update_data(st)
+        pickax.update_data(st)
     else:
-        pickaxe.close()
+        pickax.close()
 
-# helper function to check if files exist and start up PickAxe
+# helper function to check if files exist and start up PickAx
 def pick_station(station_code, qmlevent_file, creation_info):
     catalog = []
     if not os.path.exists(f'{qmlevent_file}'):
@@ -80,19 +80,19 @@ def pick_station(station_code, qmlevent_file, creation_info):
     st = obspy.read(f'{station_code}.mseed')
     preprocess(st)
 
-    pickaxe = PickAxe(st,
+    pickax = PickAx(st,
                       qmlevent=qmlevent,
                       finishFn=dosave,
                       creation_info = creation_info,
                       filters = filters, # allows toggling between fitlers
                       figsize=(10,8)
                       )
-    pickaxe.draw()
-    return pickaxe
+    pickax.draw()
+    return pickax
 
 # get ready and...
 station_codes = ["JKYD", "JSC"]
 evt_qml = "elgin.qml"
 info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
-pickaxe = pick_station(station_codes[0], evt_qml, info)
+pickax = pick_station(station_codes[0], evt_qml, info)

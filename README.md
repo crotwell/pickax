@@ -1,18 +1,18 @@
-# PickAxe
+# PickAx
 
-[![PyPI](https://img.shields.io/pypi/v/pickaxe)](https://pypi.org/project/pickaxe/)
+[![PyPI](https://img.shields.io/pypi/v/pickax)](https://pypi.org/project/pickax/)
 
-PickAxe: a simple seismic picker, when you just need to dig out a few
+PickAx: a simple seismic picker, when you just need to dig out a few
 arrivals.
 
 # Start
 
 ```
-pickaxe -h
+pickax -h
 Hi PickAxe!
-usage: pickaxe [-h] [-v] [-l LOADER] [-s SEIS]
+usage: pickax [-h] [-v] [-l LOADER] [-s SEIS]
 
-Pickaxe, really simple seismic phase picker.
+Pickax, really simple seismic phase picker.
 
 options:
   -h, --help            show this help message and exit
@@ -22,15 +22,15 @@ options:
   -s SEIS, --seis SEIS  Seismogram file, loaded at startup
 ```
 
-For example, using `simple.py` to initialize pickaxe, load data and open the picker window:
+For example, using `simple.py` to initialize pickax, load data and open the picker window:
 
 ```
-pickaxe -l simple.py
+pickax -l simple.py
 ```
 
 Or to view just a single file, ie quick look:
 ```
-pickaxe -s JKYD.mseed
+pickax -s JKYD.mseed
 ```
 
 # Keys
@@ -52,7 +52,7 @@ pickaxe -s JKYD.mseed
 # Configuration
 
 PickAxe tries to be very simple and do just one thing, just like
-a pickaxe is good for digging a hole in
+a pickax is good for digging a hole in
 red clay, but is just one of the tools in your toolshed. So don't forget
 to use your shovels, screwdrivers and lawnmowers for the things they do better.
 Basically all data management is handed off to the startup
@@ -62,7 +62,7 @@ allows toggling between different ways of processing the seismogram.
 The creation_info provides default creation info for the pick,
 primarily for author or agency_id, defaulting to `author=os.getlogin()`.
 
-See [simple.py](https://raw.githubusercontent.com/crotwell/pickaxe/main/simple.py) for an example of setting up pickaxe and loading data.
+See [simple.py](https://raw.githubusercontent.com/crotwell/pickax/main/simple.py) for an example of setting up pickax and loading data.
 
 # Filter functions
 
@@ -89,15 +89,15 @@ one of "quit", "next", or "prev".
 # build hints
 
 ```
-conda create -n pickaxe python=3.10
-conda activate pickaxe
+conda create -n pickax python=3.10
+conda activate pickax
 python3 -m pip install --upgrade build
 rm -f dist/* && python3 -m build
-pip3 install dist/pickaxe-*-py3-none-any.whl --force-reinstall
+pip3 install dist/pickax-*-py3-none-any.whl --force-reinstall
 
 ```
 
 or if all deps are already installed, much faster:
 ```
-pip3 install dist/pickaxe-*-py3-none-any.whl --force-reinstall --no-deps
+pip3 install dist/pickax-*-py3-none-any.whl --force-reinstall --no-deps
 ```

@@ -28,9 +28,9 @@ DEFAULT_KEYMAP = {
     't': "CURR_MOUSE",
 }
 
-class PickAxe:
+class PickAx:
     """
-    PickAxe, a simple seismic picker, when you just need to dig a few
+    PickAx, a simple seismic picker, when you just need to dig a few
     arrivals out of the red clay.
 
     stream -- usually a waveform for a single channel
@@ -90,7 +90,7 @@ class PickAxe:
         self.clear_trace()
         self.clear_flags()
         self.ax.clear()
-        self.ax.set_title(f"Pickaxe {self.list_channels()}")
+        self.ax.set_title(f"Pickax {self.list_channels()}")
         self.draw()
     def __saved_update_draw(self):
         self.draw_stream()
@@ -120,7 +120,7 @@ class PickAxe:
     def draw(self):
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
-        self.ax.set_title(f"Pickaxe {self.list_channels()}")
+        self.ax.set_title(f"Pickax {self.list_channels()}")
         # add lines
         self.draw_stream()
         for pick in self.channel_picks():
@@ -202,7 +202,7 @@ class PickAxe:
         Optionally give the pick a phase name, defaults to "pick".
         """
         p = obspy.core.event.origin.Pick()
-        p.method_id = "PickAxe"
+        p.method_id = "PickAx"
         p.phase_hint = phase
         p.time = self.start + event.xdata
         p.waveform_id = obspy.core.event.base.WaveformStreamID(network_code=self.stream[0].stats.network,

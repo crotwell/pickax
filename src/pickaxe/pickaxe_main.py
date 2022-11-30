@@ -1,6 +1,6 @@
 from IPython import embed;
 from IPython.core.getipython import get_ipython
-from .pickaxe import PickAxe
+from .pickax import PickAx
 import obspy
 from obspy.core.event.base import CreationInfo
 import IPython
@@ -14,7 +14,7 @@ import argparse
 
 def do_parseargs():
     parser = argparse.ArgumentParser(
-        description="Pickaxe, really simple seismic phase picker."
+        description="Pickax, really simple seismic phase picker."
     )
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"
@@ -34,7 +34,7 @@ def do_parseargs():
     return parser.parse_args()
 
 def main():
-    print("Hi PickAxe!")
+    print("Hi PickAx!")
     args = do_parseargs()
 
     c = Config()
@@ -42,7 +42,7 @@ def main():
         'import math',
         'from obspy.core.event.base import CreationInfo',
         'import obspy',
-        'from pickaxe import PickAxe',
+        'from pickax import PickAx',
         'import matplotlib.pyplot as plt',
         "plt.rcParams['toolbar'] = 'None'",
         "plt.rcParams['keymap.fullscreen'].remove('f')",
@@ -57,8 +57,8 @@ def main():
             print(f"File {args.seis} does not seem to exist, cowardly quitting...")
             return
         c.InteractiveShellApp.exec_lines.append(f"st = obspy.read('{args.seis}')")
-        c.InteractiveShellApp.exec_lines.append(f"pickaxe = PickAxe(st)")
-        c.InteractiveShellApp.exec_lines.append(f"pickaxe.draw()")
+        c.InteractiveShellApp.exec_lines.append(f"pickax = PickAx(st)")
+        c.InteractiveShellApp.exec_lines.append(f"pickax.draw()")
     c.InteractiveShell.colors = 'LightBG'
     c.InteractiveShell.confirm_exit = False
     c.TerminalIPythonApp.display_banner = False
