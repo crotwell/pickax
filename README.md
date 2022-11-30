@@ -9,7 +9,7 @@ arrivals.
 
 ```
 pickax -h
-Hi PickAxe!
+Hi PickAx!
 usage: pickax [-h] [-v] [-l LOADER] [-s SEIS]
 
 Pickax, really simple seismic phase picker.
@@ -51,7 +51,7 @@ pickax -s JKYD.mseed
 
 # Configuration
 
-PickAxe tries to be very simple and do just one thing, just like
+PickAx tries to be very simple and do just one thing, just like
 a pickax is good for digging a hole in
 red clay, but is just one of the tools in your toolshed. So don't forget
 to use your shovels, screwdrivers and lawnmowers for the things they do better.
