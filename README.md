@@ -92,12 +92,12 @@ one of "quit", "next", or "prev".
 conda create -n pickax python=3.10
 conda activate pickax
 python3 -m pip install --upgrade build
-rm -f dist/* && python3 -m build
-pip3 install dist/pickax-*-py3-none-any.whl --force-reinstall
+/bin/rm -f dist/* && python3 -m build
+pip3 install dist/seismic_pickax-*-py3-none-any.whl --force-reinstall
 
 ```
 
 or if all deps are already installed, much faster:
 ```
-pip3 install dist/pickax-*-py3-none-any.whl --force-reinstall --no-deps
+pip3 install dist/seismic_pickax-*-py3-none-any.whl --force-reinstall --no-deps
 ```
