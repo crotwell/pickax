@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
 from .blit_manager import BlitManager
-from .seismograph import Seismograph
-from .pick_util import pick_to_string, pick_from_trace
+from .pick_util import pick_to_string
 
 
 DEFAULT_KEYMAP = {
@@ -30,10 +29,10 @@ DEFAULT_KEYMAP = {
     't': "CURR_MOUSE",
 }
 
-class PickAx:
+class Seismograph:
     """
-    PickAx, a simple seismic picker, when you just need to dig a few
-    arrivals out of the red clay.
+    Single display for seismograms. If there are more than one seismogram, they
+    are displayed overlain.
 
     stream -- usually a waveform for a single channel
     qmlevent -- optional QuakeML Event to store picks in, created if not supplied
@@ -43,38 +42,27 @@ class PickAx:
     keymap -- optional dictionary of key to function
     """
     def __init__(self,
-                 stream,
+                 ax, stream,
                  qmlevent=None,
                  finishFn=None,
                  creation_info=None,
                  filters = [],
-                 figsize = (10,8),
-                 keymap = {}):
+                 keymap = {},
+                 bm = None):
+        self.ax = ax
         self._init_keymap(keymap)
-        self.display_groups = []
-        self.seismographList = []
-        uniq_chan_traces = {}
-        for trace in stream:
-            if trace.id not in uniq_chan_traces:
-                uniq_chan_traces[trace.id] = []
-            uniq_chan_traces[trace.id].append(trace)
-        sortedCodes = sorted(list(uniq_chan_traces.keys()))
-        for code in sortedCodes:
-            self.display_groups.append(uniq_chan_traces[code])
-
-
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
-        self.figsize = figsize
         self._init_data_(stream, qmlevent)
         if creation_info is None and os.getlogin() is not None:
             self.creation_info = obspy.core.event.base.CreationInfo(
                 author=os.getlogin()
                 )
-        self.fig = plt.figure(figsize=self.figsize)
-        self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
-        self.bm = BlitManager(self.fig.canvas, [])
+        if bm is not None:
+            self.bm = bm
+        else:
+            self.bm = BlitManager(self.get_figure().canvas, [])
         self._prev_zoom_time = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
@@ -103,7 +91,7 @@ class PickAx:
         self.clear_trace()
         self.clear_flags()
         self.ax.clear()
-        self.ax.set_title(f"Pickax {' '.join(self.list_channels())}")
+        self.ax.set_title(f"Pickax {self.list_channels()}")
         self.draw()
     def __saved_update_draw(self):
         self.draw_stream()
@@ -131,22 +119,101 @@ class PickAx:
                 #ip.ask_exit()
                 #get_app().exit(exception=EOFError)
     def draw(self):
-        position = 1
-        for trList in self.display_groups:
-            ax = self.fig.add_subplot(len(self.display_groups),1,position)
-            position += 1
-            sg = Seismograph(ax, trList,
-                            qmlevent = self.qmlevent,
-                            finishFn = self.finishFn,
-                            creation_info = self.creation_info,
-                            filters = self.filters,
-                            keymap = self.keymap,
-                            bm = self.bm)
-            sg.draw()
-            self.seismographList.append(sg)
+        self.ax.set_xlabel(f'seconds from {self.start}')
+        stats = self.stream[0].stats
+        self.ax.set_title(f"Pickax {self.list_channels()}")
+        # add lines
+        self.draw_stream()
+        for pick in self.channel_picks():
+            self.draw_flag(pick, self.arrival_for_pick(pick))
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
+    def draw_stream(self):
+        draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
+        for trace in draw_stream:
+            (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5, animated=True)
+            self.bm.add_trace_artist(ln)
+
+    def station_picks(self):
+        """
+        Finds all picks in the earthquake whose waveform_id matches the
+        streams network and station codes.
+        """
+        sta_code = self.stream[0].stats.station
+        net_code = self.stream[0].stats.network
+        return filter(lambda p: p.waveform_id.network_code == net_code and p.waveform_id.station_code == sta_code, self.qmlevent.picks)
+    def channel_picks(self):
+        """
+        Finds all picks in the earthquake whose waveform_id matches the
+        streams network, station, location and channel codes.
+        """
+        loc_code = self.stream[0].stats.location
+        chan_code = self.stream[0].stats.channel
+        sta_picks = self.station_picks()
+        return filter(lambda p: p.waveform_id.location_code == loc_code and p.waveform_id.channel_code == chan_code, sta_picks)
+
+    def draw_flag(self, pick, arrival=None):
+        """
+        Draws flages for each pick.
+        """
+        at_time = pick.time - self.start
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        mean = (ymin+ymax)/2
+        hw = 0.9*(ymax-ymin)/2
+        x = [at_time, at_time]
+        y = [mean-hw, mean+hw]
+        color = "red"
+        if arrival is not None:
+            color = "blue"
+        (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
+        label = None
+        label_str = "pick"
+        if arrival is not None:
+            label_str = arrival.phase
+        elif pick.phase_hint is not None:
+            label_str = pick.phase_hint
+        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color, animated=True)
+        self.bm.add_flag_artist(ln)
+        self.bm.add_flag_artist(label)
+    def do_pick(self, event, phase="pick"):
+        """
+        Creates a pick based on a gui event, like keypress and mouse position.
+        Optionally give the pick a phase name, defaults to "pick".
+        """
+        p = obspy.core.event.origin.Pick()
+        p.method_id = "PickAx"
+        p.phase_hint = phase
+        p.time = self.start + event.xdata
+        p.waveform_id = obspy.core.event.base.WaveformStreamID(network_code=self.stream[0].stats.network,
+                                                               station_code=self.stream[0].stats.station,
+                                                               location_code=self.stream[0].stats.location,
+                                                               channel_code=self.stream[0].stats.channel)
+        if self.creation_info is not None:
+            p.creation_info = obspy.core.event.base.CreationInfo(
+                agency_id=self.creation_info.agency_id,
+                agency_uri=self.creation_info.agency_uri,
+                author=self.creation_info.author,
+                author_uri=self.creation_info.author_uri,
+                creation_time=obspy.UTCDateTime(),
+                )
+        self.qmlevent.picks.append(p)
+        a = None
+        for tr in self.stream:
+            times = tr.times()
+            index = round(times.searchsorted(event.xdata))
+            if index >=0 and index < len(tr):
+                a = obspy.core.event.magnitude.Amplitude()
+                a.generic_amplitude = tr.data[index]
+                a.pick_id = p.resource_id
+                a.waveform_id = p.waveform_id
+                if self.curr_filter != -1:
+                    a.filter_id = self.filters[self.curr_filter]['name']
+                a.creation_info = p.creation_info
+                self.qmlevent.amplitudes.append(a)
+                break
+        self.draw_flag(p)
+        self.bm.update()
     def clear_trace(self):
         """
         Clears the waveforms from the display.
@@ -165,11 +232,60 @@ class PickAx:
         self.bm._flag_artists = []
         # also clear x zoom marker if present
         self.bm.unset_zoom_bound()
+    def do_filter(self, idx):
+        """
+        Applies the idx-th filter to the waveform and redraws.
+        """
+        self.clear_trace()
+        self.clear_flags()
+        if idx < 0 or idx >= len(self.filters):
+            self._filtered_stream = self.stream
+            self.curr_filter = -1
+            self.ax.set_ylabel("")
+        else:
+            filterFn = self.filters[idx]['fn']
+            orig_copy = self.stream.copy()
+            out_stream = filterFn(orig_copy, self._filtered_stream, self.filters[idx]['name'], idx )
+            if out_stream is not None:
+                # fun returned new stream
+                self._filtered_stream = out_stream
+            else:
+                # assume filtering done in place
+                self._filtered_stream = orig_copy
+            self.ax.set_ylabel(self.filters[idx]['name'])
+            self.curr_filter = idx
+
+        self.zoom_amp()
+        self.draw_stream()
+        self.fig.canvas.draw_idle()
+
+        for pick in self.channel_picks():
+            self.draw_flag(pick, self.arrival_for_pick(pick))
+
+        self.fig.canvas.draw_idle()
     def close(self):
         """
         Close the window, goodnight moon.
         """
         plt.close()
+    def zoom_amp(self):
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        calc_min = ymax
+        calc_max = ymin
+        tstart = self.start + xmin
+        tend = self.start + xmax
+        st = self._filtered_stream if self._filtered_stream is not None else self.stream
+        for tr in st:
+            tr_slice = tr.slice(tstart, tend)
+            if tr_slice is not None and tr_slice.data is not None:
+                calc_min = min(calc_min, tr_slice.data.min())
+                calc_max = max(calc_max, tr_slice.data.max())
+        if calc_min > calc_max:
+            # in case no trace in window
+            t = calc_max
+            calc_max = calc_min
+            calc_min = t
+        self.ax.set_ylim(calc_min, calc_max)
     def on_key(self, event):
         """
         Event handler for key presses.
@@ -245,73 +361,48 @@ class PickAx:
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
         elif self.keymap[event.key]  == "DISPLAY_PICKS":
-            print(self.seismograph_for_axes(event.inaxes).display_picks(author=self.creation_info.author))
+            print(self.display_picks(author=self.creation_info.author))
         elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
         elif self.keymap[event.key]  == "NEXT_FILTER":
-            for sg in self.seismographList:
-                sg.do_filter(self.curr_filter+1)
+            self.do_filter(self.curr_filter+1)
         elif self.keymap[event.key]  == "PREV_FILTER":
             if self.curr_filter < 0:
                 self.curr_filter = len(self.filters)
-            for sg in self.seismographList:
-                sg.do_filter(self.curr_filter-1)
-
-    def get_picks(self, include_station, author):
-        pick_list = []
-        for sg in self.seismographList:
-            if include_station:
-                pick_list += sg.station_picks()
-            else:
-                pick_list += sg.channel_picks()
-        if author is not None:
-            pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
-        return pick_list
-
-    def do_pick(self, event, phase=None):
-        return self.seismograph_for_axes(event.inaxes).do_pick(event, phase)
-    def seismograph_for_axes(self, ax):
-        for sg in self.seismographList:
-            if sg.ax == ax:
-                print("found Seismograph for event ")
-                return sg
-        return None
-
+            self.do_filter(self.curr_filter-1)
     def list_channels(self):
         """
         Lists the channel codes for all traces in the stream, removing duplicates.
         Usually all traces will be from a single channel.
         """
-        chans = []
+        chans = ""
         for tr in self.stream:
             stats = tr.stats
             nslc = f"{stats.network}_{stats.station}_{stats.location}_{stats.channel}"
             if nslc not in chans:
-                chans.append(nslc)
-        return chans
+                chans = f"{chans} {nslc}"
+        return chans.strip()
+
     def display_picks(self, include_station=False, author=None):
         """
         Creates a string showing the current channels, earthquake and all the
         picks on the current stream.
         """
-        quakes = []
-        for sg in self.seismographList:
-            if not sg.qmlevent in quakes:
-                quakes.append(sg.qmlevent)
         lines = []
-        lines += self.list_channels()
+        lines.append(self.list_channels())
         lines.append("")
-        for q in quakes:
-            print("sg")
-            lines.append(q.short_str())
-        lines.append("")
-        for q in quakes:
-            for tr in self.stream:
-                net_code = tr.stats.network
-                sta_code = tr.stats.station
-                all_picks = filter(lambda p: pick_from_trace(p, tr), q.picks)
-                for p in all_picks:
-                    lines.append(pick_to_string(p, qmlevent=q))
+        if self.qmlevent is not None:
+            lines.append(f"{self.qmlevent.short_str()}")
+        pick_list = []
+        if include_station:
+            pick_list = self.station_picks()
+        else:
+            pick_list = self.channel_picks()
+        if author is not None:
+            pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
+        for p in pick_list:
+            lines.append(pick_to_string(p, qmlevent=self.qmlevent, start=self.start))
         return "\n".join(lines)
+
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])
