@@ -9,7 +9,7 @@ from prompt_toolkit.application.current import get_app
 
 from .blit_manager import BlitManager
 from .seismograph import Seismograph
-from .pick_util import pick_to_string, pick_from_trace
+from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 
 
 DEFAULT_KEYMAP = {
@@ -108,7 +108,7 @@ class PickAx:
     def __saved_update_draw(self):
         self.draw_stream()
         for pick in self.channel_picks():
-            self.draw_flag(pick, self.arrival_for_pick(pick))
+            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
         self.ax.set_ylabel("")
 
         self.ax.relim()

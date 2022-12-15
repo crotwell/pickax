@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
 from .blit_manager import BlitManager
-from .pick_util import pick_to_string
+from .pick_util import pick_to_string, arrival_for_pick
 
 
 DEFAULT_KEYMAP = {
@@ -96,7 +96,7 @@ class Seismograph:
     def __saved_update_draw(self):
         self.draw_stream()
         for pick in self.channel_picks():
-            self.draw_flag(pick, self.arrival_for_pick(pick))
+            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
         self.ax.set_ylabel("")
 
         self.ax.relim()
@@ -125,7 +125,7 @@ class Seismograph:
         # add lines
         self.draw_stream()
         for pick in self.channel_picks():
-            self.draw_flag(pick, self.arrival_for_pick(pick))
+            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
@@ -260,7 +260,7 @@ class Seismograph:
         self.fig.canvas.draw_idle()
 
         for pick in self.channel_picks():
-            self.draw_flag(pick, self.arrival_for_pick(pick))
+            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
 
         self.fig.canvas.draw_idle()
     def close(self):
@@ -286,6 +286,8 @@ class Seismograph:
             calc_max = calc_min
             calc_min = t
         self.ax.set_ylim(calc_min, calc_max)
+    def handle_zoom(self, event, prev_zoom_time):
+        pass
     def on_key(self, event):
         """
         Event handler for key presses.
