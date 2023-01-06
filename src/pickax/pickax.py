@@ -3,6 +3,7 @@ import os
 import obspy
 import numpy
 from obspy import read
+from obspy.core import Stream
 from IPython import get_ipython
 import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
@@ -51,16 +52,6 @@ class PickAx:
                  figsize = (10,8),
                  keymap = {}):
         self._init_keymap(keymap)
-        self.display_groups = []
-        self.seismographList = []
-        uniq_chan_traces = {}
-        for trace in stream:
-            if trace.id not in uniq_chan_traces:
-                uniq_chan_traces[trace.id] = []
-            uniq_chan_traces[trace.id].append(trace)
-        sortedCodes = sorted(list(uniq_chan_traces.keys()))
-        for code in sortedCodes:
-            self.display_groups.append(uniq_chan_traces[code])
 
 
         self.finishFn = finishFn
@@ -82,6 +73,17 @@ class PickAx:
             self.qmlevent = qmlevent
         else:
             self.qmlevent = obspy.core.event.Event()
+        self.display_groups = []
+        self.seismographList = []
+        uniq_chan_traces = {}
+        for trace in stream:
+            if trace.id not in uniq_chan_traces:
+                uniq_chan_traces[trace.id] = Stream()
+            uniq_chan_traces[trace.id].append(trace)
+        sortedCodes = sorted(list(uniq_chan_traces.keys()))
+        for code in sortedCodes:
+            self.display_groups.append(uniq_chan_traces[code])
+
         self.start = self.calc_start()
         self.curr_filter = -1
         self._filtered_stream = None
@@ -100,19 +102,7 @@ class PickAx:
         else:
             # reuse current event
             self._init_data_(stream, self.qmlevent)
-        self.clear_trace()
-        self.clear_flags()
-        self.ax.clear()
-        self.ax.set_title(f"Pickax {' '.join(self.list_channels())}")
         self.draw()
-    def __saved_update_draw(self):
-        self.draw_stream()
-        for pick in self.channel_picks():
-            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
-        self.ax.set_ylabel("")
-
-        self.ax.relim()
-        self.fig.canvas.draw_idle()
     def do_finish(self, command):
         """
         Runs the supplied finish function with earthquake, stream and the
@@ -131,6 +121,10 @@ class PickAx:
                 #ip.ask_exit()
                 #get_app().exit(exception=EOFError)
     def draw(self):
+        self.bm.clear()
+        self.fig.clear()
+        self.seismographList = []
+        self.fig.canvas.draw_idle()
         position = 1
         for trList in self.display_groups:
             ax = self.fig.add_subplot(len(self.display_groups),1,position)
@@ -144,27 +138,10 @@ class PickAx:
                             bm = self.bm)
             sg.draw()
             self.seismographList.append(sg)
+        self.fig.canvas.draw_idle()
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
-    def clear_trace(self):
-        """
-        Clears the waveforms from the display.
-        """
-        for artist in self.bm._trace_artists:
-            artist.remove()
-            self.bm._artists.remove(artist)
-        self.bm._trace_artists = []
-    def clear_flags(self):
-        """
-        Clears pick flags from the display.
-        """
-        for artist in self.bm._flag_artists:
-            artist.remove()
-            self.bm._artists.remove(artist)
-        self.bm._flag_artists = []
-        # also clear x zoom marker if present
-        self.bm.unset_zoom_bound()
     def close(self):
         """
         Close the window, goodnight moon.
@@ -179,55 +156,29 @@ class PickAx:
                 print(f"unknown key function: {event.key}")
             return
         if self.keymap[event.key] != "ZOOM_IN":
-            self._prev_zoom_time = None
-            self.bm.unset_zoom_bound()
-        else:
-            # event.key=="x":
-            if self._prev_zoom_time is not None:
-                self.bm.unset_zoom_bound()
-                if event.xdata > self._prev_zoom_time:
-                    self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
-                else:
-                    self.ax.set_xlim(left=event.xdata, right=self._prev_zoom_time)
-                self.zoom_amp()
-                self.fig.canvas.draw_idle()
-                self._prev_zoom_time = None
-            else:
-                self._prev_zoom_time = event.xdata
-                xmin, xmax, ymin, ymax = self.ax.axis()
-                mean = (ymin+ymax)/2
-                hw = 0.9*(ymax-ymin)/2
-                x = [event.xdata, event.xdata]
-                y = [mean-hw, mean+hw]
-                color = "black"
-                (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
-                self.bm.set_zoom_bound(ln)
-                self.bm.update()
+            for sg in self.seismographList:
+                sg.unset_zoom()
 
-        if self.keymap[event.key] == "ZOOM_OUT":
-            xmin, xmax, ymin, ymax = self.ax.axis()
-            xwidth = xmax - xmin
-            self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
-            self.zoom_amp()
-            self.bm.unset_zoom_bound()
-
+        if self.keymap[event.key] == "ZOOM_IN":
+            for sg in self.seismographList:
+                sg.do_zoom(event)
+            self.fig.canvas.draw_idle()
+        elif self.keymap[event.key] == "ZOOM_OUT":
+            for sg in self.seismographList:
+                sg.do_zoom(event)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
-            offset = event.xdata
-            time = self.start + offset
-            amp = event.ydata
+            time, amp = self.seismograph_for_axes(event.inaxes).do_mouse_position()
             print(f"Time: {time} ({offset} s)  Amp: {amp}")
         elif self.keymap[event.key] =="EAST":
-            xmin, xmax, ymin, ymax = self.ax.axis()
+            xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            self.ax.set_xlim(xmin+xwidth/2, xmax+xwidth/2)
-            self.zoom_amp()
+            self.seismograph_for_axes(event.inaxes).update_xlim(xmin+xwidth/2, xmax+xwidth/2)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="WEST":
-            xmin, xmax, ymin, ymax = self.ax.axis()
+            xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
-            self.zoom_amp()
+            self.seismograph_for_axes(event.inaxes).update_xlim(xmin-xwidth/2, xmax-xwidth/2)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
@@ -249,13 +200,20 @@ class PickAx:
         elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
         elif self.keymap[event.key]  == "NEXT_FILTER":
+            if self.curr_filter == len(self.filters)-1:
+                self.curr_filter = -2
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter+1)
+            self.curr_filter += 1
+            print(f"filter {self.curr_filter}")
+            self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "PREV_FILTER":
             if self.curr_filter < 0:
                 self.curr_filter = len(self.filters)
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter-1)
+            self.curr_filter -= 1
+            self.fig.canvas.draw_idle()
 
     def get_picks(self, include_station, author):
         pick_list = []
@@ -273,7 +231,6 @@ class PickAx:
     def seismograph_for_axes(self, ax):
         for sg in self.seismographList:
             if sg.ax == ax:
-                print("found Seismograph for event ")
                 return sg
         return None
 
@@ -302,7 +259,6 @@ class PickAx:
         lines += self.list_channels()
         lines.append("")
         for q in quakes:
-            print("sg")
             lines.append(q.short_str())
         lines.append("")
         for q in quakes:

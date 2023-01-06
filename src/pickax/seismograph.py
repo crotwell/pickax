@@ -4,30 +4,11 @@ import obspy
 import numpy
 from obspy import read
 from IPython import get_ipython
-import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
 from .blit_manager import BlitManager
-from .pick_util import pick_to_string, arrival_for_pick
+from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 
-
-DEFAULT_KEYMAP = {
-    'c': "PICK_GENERIC",
-    'a': "PICK_P",
-    's': "PICK_S",
-    'd': "DISPLAY_PICKS",
-    'D': "DISPLAY_ALL_PICKS",
-    'f': "NEXT_FILTER",
-    'F': "PREV_FILTER",
-    'v': "GO_NEXT",
-    'r': "GO_PREV",
-    'q': "GO_QUIT",
-    'x': "ZOOM_IN",
-    'X': "ZOOM_OUT",
-    'w': "WEST",
-    'e': "EAST",
-    't': "CURR_MOUSE",
-}
 
 class Seismograph:
     """
@@ -50,7 +31,6 @@ class Seismograph:
                  keymap = {},
                  bm = None):
         self.ax = ax
-        self._init_keymap(keymap)
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
@@ -73,12 +53,6 @@ class Seismograph:
         self.start = self.calc_start()
         self.curr_filter = -1
         self._filtered_stream = None
-    def _init_keymap(self, keymap):
-        self.keymap = {}
-        for k,v in DEFAULT_KEYMAP.items():
-            self.keymap[k] = v
-        for k,v in keymap.items():
-            self.keymap[k] = v
     def update_data(self, stream, qmlevent=None):
         """
         Updates waveform and optionally earthquake and redraws.
@@ -100,25 +74,8 @@ class Seismograph:
         self.ax.set_ylabel("")
 
         self.ax.relim()
-        self.fig.canvas.draw_idle()
-    def do_finish(self, command):
-        """
-        Runs the supplied finish function with earthquake, stream and the
-        next command. Command will be one of quit, next, prev. Generally
-        the finish function is responsible for calling update_data with
-        the next or previous seismogram.
-        """
-        if self.finishFn is not None:
-            self.finishFn(self.qmlevent, self.stream, command)
-        else:
-            print(self.display_picks())
-            self.close()
-            if command == "quit":
-                print("Goodbye.")
-                #ip = get_ipython()
-                #ip.ask_exit()
-                #get_app().exit(exception=EOFError)
     def draw(self):
+        self.ax.clear()
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
         self.ax.set_title(f"Pickax {self.list_channels()}")
@@ -127,8 +84,6 @@ class Seismograph:
         for pick in self.channel_picks():
             self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
         # make sure our window is on the screen and drawn
-        plt.show(block=False)
-        plt.pause(.1)
     def draw_stream(self):
         draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         for trace in draw_stream:
@@ -257,17 +212,10 @@ class Seismograph:
 
         self.zoom_amp()
         self.draw_stream()
-        self.fig.canvas.draw_idle()
 
         for pick in self.channel_picks():
             self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
 
-        self.fig.canvas.draw_idle()
-    def close(self):
-        """
-        Close the window, goodnight moon.
-        """
-        plt.close()
     def zoom_amp(self):
         xmin, xmax, ymin, ymax = self.ax.axis()
         calc_min = ymax
@@ -286,92 +234,46 @@ class Seismograph:
             calc_max = calc_min
             calc_min = t
         self.ax.set_ylim(calc_min, calc_max)
-    def handle_zoom(self, event, prev_zoom_time):
-        pass
-    def on_key(self, event):
-        """
-        Event handler for key presses.
-        """
-        if event.key not in self.keymap:
-            if event.key != "shift":
-                print(f"unknown key function: {event.key}")
-            return
-        if self.keymap[event.key] != "ZOOM_IN":
+    def unset_zoom(self):
             self._prev_zoom_time = None
             self.bm.unset_zoom_bound()
-        else:
-            # event.key=="x":
-            if self._prev_zoom_time is not None:
-                self.bm.unset_zoom_bound()
-                if event.xdata > self._prev_zoom_time:
-                    self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
-                else:
-                    self.ax.set_xlim(left=event.xdata, right=self._prev_zoom_time)
-                self.zoom_amp()
-                self.fig.canvas.draw_idle()
-                self._prev_zoom_time = None
+    def do_zoom(self, event):
+        # event.key=="x":
+        if self._prev_zoom_time is not None:
+            self.bm.unset_zoom_bound()
+            if event.xdata > self._prev_zoom_time:
+                self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
             else:
-                self._prev_zoom_time = event.xdata
-                xmin, xmax, ymin, ymax = self.ax.axis()
-                mean = (ymin+ymax)/2
-                hw = 0.9*(ymax-ymin)/2
-                x = [event.xdata, event.xdata]
-                y = [mean-hw, mean+hw]
-                color = "black"
-                (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
-                self.bm.set_zoom_bound(ln)
-                self.bm.update()
+                self.ax.set_xlim(left=event.xdata, right=self._prev_zoom_time)
+            self.zoom_amp()
+            self._prev_zoom_time = None
+        else:
+            self._prev_zoom_time = event.xdata
+            xmin, xmax, ymin, ymax = self.ax.axis()
+            mean = (ymin+ymax)/2
+            hw = 0.9*(ymax-ymin)/2
+            x = [event.xdata, event.xdata]
+            y = [mean-hw, mean+hw]
+            color = "black"
+            (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
+            self.bm.set_zoom_bound(ln)
+            self.bm.update()
 
-        if self.keymap[event.key] == "ZOOM_OUT":
+    def do_zoom_out(self):
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
             self.zoom_amp()
             self.bm.unset_zoom_bound()
 
-            self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="CURR_MOUSE":
+    def mouse_time_amp(self, event):
             offset = event.xdata
             time = self.start + offset
             amp = event.ydata
-            print(f"Time: {time} ({offset} s)  Amp: {amp}")
-        elif self.keymap[event.key] =="EAST":
-            xmin, xmax, ymin, ymax = self.ax.axis()
-            xwidth = xmax - xmin
-            self.ax.set_xlim(xmin+xwidth/2, xmax+xwidth/2)
+            return time, amp
+    def update_xlim(self, xmin, xmax):
+            self.ax.set_xlim(xmin, xmax)
             self.zoom_amp()
-            self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="WEST":
-            xmin, xmax, ymin, ymax = self.ax.axis()
-            xwidth = xmax - xmin
-            self.ax.set_xlim(xmin-xwidth/2, xmax-xwidth/2)
-            self.zoom_amp()
-            self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="GO_QUIT":
-            self.do_finish("quit")
-        elif self.keymap[event.key]  == "GO_NEXT":
-            self.do_finish("next")
-        elif self.keymap[event.key]  == "GO_PREV":
-            self.do_finish("prev")
-        elif self.keymap[event.key]  == "PICK_GENERIC":
-            if event.inaxes is not None:
-                self.do_pick(event)
-        elif self.keymap[event.key]  == "PICK_P":
-            if event.inaxes is not None:
-                self.do_pick(event, phase="P")
-        elif self.keymap[event.key]  == "PICK_S":
-            if event.inaxes is not None:
-                self.do_pick(event, phase="S")
-        elif self.keymap[event.key]  == "DISPLAY_PICKS":
-            print(self.display_picks(author=self.creation_info.author))
-        elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
-            print(self.display_picks(include_station=True))
-        elif self.keymap[event.key]  == "NEXT_FILTER":
-            self.do_filter(self.curr_filter+1)
-        elif self.keymap[event.key]  == "PREV_FILTER":
-            if self.curr_filter < 0:
-                self.curr_filter = len(self.filters)
-            self.do_filter(self.curr_filter-1)
     def list_channels(self):
         """
         Lists the channel codes for all traces in the stream, removing duplicates.
@@ -384,27 +286,6 @@ class Seismograph:
             if nslc not in chans:
                 chans = f"{chans} {nslc}"
         return chans.strip()
-
-    def display_picks(self, include_station=False, author=None):
-        """
-        Creates a string showing the current channels, earthquake and all the
-        picks on the current stream.
-        """
-        lines = []
-        lines.append(self.list_channels())
-        lines.append("")
-        if self.qmlevent is not None:
-            lines.append(f"{self.qmlevent.short_str()}")
-        pick_list = []
-        if include_station:
-            pick_list = self.station_picks()
-        else:
-            pick_list = self.channel_picks()
-        if author is not None:
-            pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
-        for p in pick_list:
-            lines.append(pick_to_string(p, qmlevent=self.qmlevent, start=self.start))
-        return "\n".join(lines)
 
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])

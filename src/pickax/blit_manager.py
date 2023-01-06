@@ -24,7 +24,11 @@ class BlitManager:
             self.add_artist(a)
         # grab the background on every draw
         self.cid = canvas.mpl_connect("draw_event", self.on_draw)
-
+    def clear(self):
+        self._artists = []
+        self._trace_artists = []
+        self._flag_artists = []
+        self._zoom_bounds = []
     def on_draw(self, event):
         """Callback to register with 'draw_event'."""
         cv = self.canvas
