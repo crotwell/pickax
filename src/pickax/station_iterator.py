@@ -54,4 +54,4 @@ class FDSNStationIterator(StationIterator):
         self.sta_idx = -1
     def ending(self):
         self.net_idx = len(self.inv.networks)-1
-        self.sta_idx = len(self.inf.networks[self.net_idx])
+        self.sta_idx = len(self.inv.networks[self.net_idx])

@@ -61,7 +61,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
 
         if sta is None or self.curr_quake is None:
             return self.__empty__
-        return self.__load_seismograms__(new, sta, self.curr_quake, self.query_params)
+        return self.__load_seismograms__(net, sta, self.curr_quake, self.query_params)
     def __load_seismograms__(self, net, sta, quake, query_params={}):
         if len(sta.channels) == 0:
             return []
