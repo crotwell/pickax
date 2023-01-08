@@ -24,7 +24,7 @@ def test_quake():
     itr = FDSNQuakeIterator(query_params, debug=True)
     q = itr.next()
     while q is not None:
-        o = q.preferred_origin
+        o = q.preferred_origin()
         print(f"{o}")
         q = itr.next()
 
@@ -46,14 +46,18 @@ def test_seismogram():
     }
     quake_itr = FDSNQuakeIterator(quake_query_params)
 
-    seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=True)
+    seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=True, timeout=15)
     net, sta, quake, seis = seis_itr.next()
-    print(len(seis))
+    while sta is not None and quake is not None:
+        print(f"{len(seis)} {net.code}_{sta.code} {quake.preferred_origin().time}")
+        net, sta, quake, seis = seis_itr.next()
+
 
 def main():
     test_station()
-    #test_quake()
+    test_quake()
     test_seismogram()
+    print("Done")
 
 if __name__ == "__main__":
     main()

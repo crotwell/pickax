@@ -14,8 +14,16 @@ class SeismogramIterator(ABC):
         return self.__empty__
 
 class FDSNSeismogramIterator(SeismogramIterator):
-    def __init__(self, quake_itr, station_itr, dc_name="IRIS", start_phases="origin", start_offset = 0, end_phases="origin", end_offset=300, debug=False):
+    def __init__(self,
+                 quake_itr,
+                 station_itr,
+                 dc_name="IRIS",
+                 start_phases="origin", start_offset = 0,
+                 end_phases="origin", end_offset=300,
+                 debug=False, timeout=30):
+        self.__empty__ = None, None, None, []
         self.debug = debug
+        self.timeout = timeout
         self.query_params = {}
         self.dc_name = dc_name
         self.quake_itr = quake_itr
@@ -35,6 +43,8 @@ class FDSNSeismogramIterator(SeismogramIterator):
         while sta is None:
             self.station_itr.beginning()
             self.curr_quake = self.quake_itr.next()
+            if self.curr_quake is None:
+                return self.__empty__
         if sta is None or self.curr_quake is None:
             return self.__empty__
         return self.__load_seismograms__(net, sta, self.curr_quake, self.query_params)
@@ -46,6 +56,8 @@ class FDSNSeismogramIterator(SeismogramIterator):
             self.curr_quake = self.quake_itr.prev()
             self.station_itr.ending()
             sta = self.station_itr.prev()
+            if self.curr_quake is None:
+                return self.__empty__
 
         if sta is None or self.curr_quake is None:
             return self.__empty__
@@ -53,7 +65,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
     def __load_seismograms__(self, net, sta, quake, query_params={}):
         if len(sta.channels) == 0:
             return []
-        client = Client(self.dc_name, debug=self.debug)
+        client = Client(self.dc_name, debug=self.debug, timeout=self.timeout)
         origin = quake.preferred_origin()
         if origin is None:
             return self.__empty__

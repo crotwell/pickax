@@ -41,10 +41,10 @@ class FDSNQuakeIterator(QuakeIterator):
             return self.next_batch_step()
         return self.quakes
     def next(self):
-        if self.batch_idx >= len(self.quakes) -1:
+        self.batch_idx += 1
+        if self.batch_idx >= len(self.quakes):
             #self.next_batch()
             return None
-        self.batch_idx += 1
         quake = self.quakes[self.batch_idx]
         if self.dc_name == "USGS":
             quake = reloadQuakeMLWithPicks(quake)
