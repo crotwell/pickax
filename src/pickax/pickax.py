@@ -54,7 +54,7 @@ class PickAx:
                  debug=False):
         self._init_keymap(keymap)
         self.debug = debug
-
+        self.scroll_factor = 8
 
         self.finishFn = finishFn
         self.creation_info = creation_info
@@ -176,14 +176,16 @@ class PickAx:
         elif self.keymap[event.key] =="EAST":
             xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
+            xshift = xwidth/self.scroll_factor
             for sg in self.seismographList:
-                sg.update_xlim(xmin+xwidth/2, xmax+xwidth/2)
+                sg.update_xlim(xmin-xshift, xmax-xshift)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="WEST":
             xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
+            xshift = xwidth/self.scroll_factor
             for sg in self.seismographList:
-                sg.update_xlim(xmin-xwidth/2, xmax-xwidth/2)
+                sg.update_xlim(xmin+xshift, xmax+xshift)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
