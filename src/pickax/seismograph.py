@@ -66,8 +66,7 @@ class Seismograph:
         self.draw()
     def __saved_update_draw(self):
         self.draw_stream()
-        for pick in self.channel_picks():
-            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
+        self.draw_all_flags()
         self.ax.set_ylabel("")
 
         self.ax.relim()
@@ -78,14 +77,15 @@ class Seismograph:
         self.ax.set_title(f"Pickax {self.list_channels()}")
         # add lines
         self.draw_stream()
-        for pick in self.channel_picks():
-            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
+        self.draw_all_flags()
     def draw_stream(self):
         draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         for trace in draw_stream:
             (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
             self._trace_artists.append(ln)
-
+    def draw_all_flags(self):
+        for pick in self.channel_picks():
+            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
     def station_picks(self):
         """
         Finds all picks in the earthquake whose waveform_id matches the
@@ -106,7 +106,7 @@ class Seismograph:
 
     def draw_flag(self, pick, arrival=None):
         """
-        Draws flages for each pick.
+        Draws flag for a pick.
         """
         at_time = pick.time - self.start
         xmin, xmax, ymin, ymax = self.ax.axis()
@@ -205,9 +205,7 @@ class Seismograph:
 
         self.zoom_amp()
         self.draw_stream()
-
-        for pick in self.channel_picks():
-            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
+        self.draw_all_flags()
 
     def zoom_amp(self):
         xmin, xmax, ymin, ymax = self.ax.axis()
@@ -227,6 +225,8 @@ class Seismograph:
             calc_max = calc_min
             calc_min = t
         self.ax.set_ylim(calc_min, calc_max)
+        self.clear_flags()
+        self.draw_all_flags()
     def unset_zoom(self):
             self._prev_zoom_time = None
             self.unset_zoom_bound()
