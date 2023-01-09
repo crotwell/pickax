@@ -83,6 +83,7 @@ class Seismograph:
             (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
             self._trace_artists.append(ln)
     def draw_all_flags(self):
+        self.clear_flags()
         for pick in self.channel_picks():
             self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
     def station_picks(self):
@@ -203,8 +204,6 @@ class Seismograph:
             self.curr_filter = idx
 
         self.zoom_amp()
-        self.draw_stream()
-        self.draw_all_flags()
 
     def zoom_amp(self):
         xmin, xmax, ymin, ymax = self.ax.axis()
@@ -225,10 +224,12 @@ class Seismograph:
             calc_min = t
         self.ax.set_ylim(calc_min, calc_max)
         self.clear_flags()
+        self.clear_trace()
+        self.draw_stream()
         self.draw_all_flags()
     def unset_zoom(self):
-            self._prev_zoom_time = None
-            self.unset_zoom_bound()
+        self._prev_zoom_time = None
+        self.unset_zoom_bound()
     def do_zoom(self, event):
         # event.key=="x":
         if self._prev_zoom_time is not None:
@@ -251,11 +252,15 @@ class Seismograph:
             self.set_zoom_bound(ln)
 
     def do_zoom_out(self):
-            xmin, xmax, ymin, ymax = self.ax.axis()
-            xwidth = xmax - xmin
-            self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
-            self.zoom_amp()
-            self.unset_zoom_bound()
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        xwidth = xmax - xmin
+        self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
+        self.zoom_amp()
+        self.unset_zoom_bound()
+    def do_zoom_original(self):
+        self.ax.set_xlim(auto=True)
+        self.zoom_amp()
+        self.unset_zoom_bound()
     def set_zoom_bound(self, art):
         self._zoom_bounds = [art]
     def unset_zoom_bound(self):
@@ -264,13 +269,13 @@ class Seismograph:
         self._zoom_bounds = []
 
     def mouse_time_amp(self, event):
-            offset = event.xdata
-            time = self.start + offset
-            amp = event.ydata
-            return time, amp
+        offset = event.xdata
+        time = self.start + offset
+        amp = event.ydata
+        return time, amp
     def update_xlim(self, xmin, xmax):
-            self.ax.set_xlim(xmin, xmax)
-            self.zoom_amp()
+        self.ax.set_xlim(xmin, xmax)
+        self.zoom_amp()
     def list_channels(self):
         """
         Lists the channel codes for all traces in the stream, removing duplicates.

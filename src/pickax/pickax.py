@@ -11,8 +11,9 @@ from prompt_toolkit.application.current import get_app
 from .blit_manager import BlitManager
 from .seismograph import Seismograph
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
+from .help import print_help
 
-
+# remember help.py if adding to keymap
 DEFAULT_KEYMAP = {
     'c': "PICK_GENERIC",
     'a': "PICK_P",
@@ -26,9 +27,11 @@ DEFAULT_KEYMAP = {
     'q': "GO_QUIT",
     'x': "ZOOM_IN",
     'X': "ZOOM_OUT",
+    'z': "ZOOM_ORIG",
     'w': "WEST",
     'e': "EAST",
     't': "CURR_MOUSE",
+    'h': "HELP",
 }
 
 class PickAx:
@@ -171,6 +174,10 @@ class PickAx:
             for sg in self.seismographList:
                 sg.do_zoom_out()
             self.fig.canvas.draw_idle()
+        elif self.keymap[event.key] == "ZOOM_ORIG":
+            for sg in self.seismographList:
+                sg.do_zoom_original()
+            self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
             time, amp = self.seismograph_for_axes(event.inaxes).do_mouse_position()
             print(f"Time: {time} ({offset} s)  Amp: {amp}")
@@ -223,7 +230,12 @@ class PickAx:
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter-1)
             self.curr_filter -= 1
+            print(self.curr_filter)
             self.fig.canvas.draw_idle()
+        elif self.keymap[event.key]  == "HELP":
+            print_help(self.keymap)
+        else:
+            print(f"Oops, key={event.key}")
 
     def get_picks(self, include_station=False, author=None):
         pick_list = []
