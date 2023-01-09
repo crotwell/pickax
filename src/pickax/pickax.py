@@ -21,15 +21,15 @@ DEFAULT_KEYMAP = {
     'D': "DISPLAY_ALL_PICKS",
     'f': "NEXT_FILTER",
     'F': "PREV_FILTER",
-    'v': "GO_NEXT",
-    'r': "GO_PREV",
-    'q': "GO_QUIT",
     'x': "ZOOM_IN",
     'X': "ZOOM_OUT",
     'z': "ZOOM_ORIG",
     'w': "WEST",
     'e': "EAST",
     't': "CURR_MOUSE",
+    'v': "GO_NEXT",
+    'r': "GO_PREV",
+    'q': "GO_QUIT",
     'h': "HELP",
 }
 

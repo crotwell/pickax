@@ -1,6 +1,6 @@
 # PickAx
 
-[![PyPI](https://img.shields.io/pypi/v/pickax)](https://pypi.org/project/pickax/)
+[![PyPI](https://img.shields.io/pypi/v/seismic-pickax)](https://pypi.org/project/seismic-pickax/)
 
 PickAx: a simple seismic picker, when you just need to dig out a few
 arrivals.
@@ -35,20 +35,24 @@ pickax -s JKYD.mseed
 
 # Keys
 
-- c create generic, unnamed, pick
-- a create pick and set phase_hint to "P"
-- s create pick and set phase_hint to "S"
-- d/D to display author's picks/ all picks
-- f/F toggle to next/prev filter
-- v finish current seis, but don't quit, ie go to next
-- r finish current seis, go to previous
-- x followed by second x zooms to selected time window
-- X zoom out
-- z original zoom
-- w shift left (west)
-- e shift right (east)
-- t print current mouse time and amplitude
-- q finish current seis and quit
+- c: Create a generic pick at the current mouse location
+- a: Create a P pick at the current mouse location
+- s: Create a S pick at the current mouse location
+- d: Display your picks
+- D: Display all picks
+- f: Apply next filter
+- F: Apply previous filter
+- x: Zoom in, first use marks one edge, second zooms in
+- X: Zoom back out, double time displayed
+- z: Return to original autozoom
+- w: Shift seismogram to left (west)
+- e: Shift seismogram to right (east)
+- t: Print current time, amplitude at mouse position
+- v: Go to next data
+- r: Go to previous data
+- q: Quit
+- h: Display this help, but you knew that, right?
+
 
 # Configuration
 
