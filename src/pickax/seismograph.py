@@ -62,7 +62,6 @@ class Seismograph:
         self.clear_trace()
         self.clear_flags()
         self.ax.clear()
-        self.ax.set_title(f"Pickax {self.list_channels()}")
         self.draw()
     def __saved_update_draw(self):
         self.draw_stream()
@@ -74,7 +73,7 @@ class Seismograph:
         self.ax.clear()
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
-        self.ax.set_title(f"Pickax {self.list_channels()}")
+        self.ax.set_title(self.list_channels())
         # add lines
         self.draw_stream()
         self.draw_all_flags()

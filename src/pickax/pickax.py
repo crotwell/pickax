@@ -66,6 +66,7 @@ class PickAx:
                 author=os.getlogin()
                 )
         self.fig = plt.figure(figsize=self.figsize)
+        plt.get_current_fig_manager().set_window_title('Pickax')
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self.bm = BlitManager(self.fig.canvas, [])
         self._prev_zoom_time = None
@@ -168,7 +169,7 @@ class PickAx:
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] == "ZOOM_OUT":
             for sg in self.seismographList:
-                sg.do_zoom_out(event)
+                sg.do_zoom_out()
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
             time, amp = self.seismograph_for_axes(event.inaxes).do_mouse_position()
