@@ -206,7 +206,7 @@ class PickAx:
                 self.do_pick(event, phase="S")
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "DISPLAY_PICKS":
-            print(self.seismograph_for_axes(event.inaxes).display_picks(author=self.creation_info.author))
+            print(self.display_picks(author=self.creation_info.author))
         elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
         elif self.keymap[event.key]  == "NEXT_FILTER":
@@ -224,7 +224,7 @@ class PickAx:
             self.curr_filter -= 1
             self.fig.canvas.draw_idle()
 
-    def get_picks(self, include_station, author):
+    def get_picks(self, include_station=False, author=None):
         pick_list = []
         for sg in self.seismographList:
             if include_station:
@@ -270,13 +270,8 @@ class PickAx:
         for q in quakes:
             lines.append(q.short_str())
         lines.append("")
-        for q in quakes:
-            for tr in self.stream:
-                net_code = tr.stats.network
-                sta_code = tr.stats.station
-                all_picks = filter(lambda p: pick_from_trace(p, tr), q.picks)
-                for p in all_picks:
-                    lines.append(pick_to_string(p, qmlevent=q))
+        for p in self.get_picks(include_station=include_station, author=author):
+            lines.append(pick_to_string(p, qmlevent=self.qmlevent))
         return "\n".join(lines)
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])
