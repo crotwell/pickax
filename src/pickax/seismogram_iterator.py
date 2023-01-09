@@ -55,7 +55,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
         if sta is None:
             self.curr_quake = self.quake_itr.prev()
             self.station_itr.ending()
-            sta = self.station_itr.prev()
+            net, sta = self.station_itr.prev()
             if self.curr_quake is None:
                 return self.__empty__
 
