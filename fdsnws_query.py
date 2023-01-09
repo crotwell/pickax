@@ -29,6 +29,7 @@ filters = [
 ]
 
 pickax = None
+debug = False
 
 # function called on quit, next or prev, allows saving of picks however you wish
 # here we save the quake as QuakeML, which will include the picks, and then
@@ -54,15 +55,16 @@ def dosave(qmlevent, stream, command):
         # or just the stream if the event is the same
         pickax.update_data(seis, quake)
     else:
+        print(f"close as {sta is None} {quake is None}")
         pickax.close()
 
 # Load stations, events and seismograms
 sta_query_params = {
     "network": "CO",
     "station": "BIRD,JSC,JKYD",
-    "channel": "HHZ,HNZ"
+    "channel": "HH?,HNZ"
 }
-sta_itr = FDSNStationIterator(sta_query_params)
+sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
 
 quake_query_params = {
     "start": "2022-11-24T16:00:00",
@@ -72,9 +74,9 @@ quake_query_params = {
     "minlongitude":-81,
     "maxlongitude":-79
 }
-quake_itr = FDSNQuakeIterator(quake_query_params)
+quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 
-seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=True, timeout=15)
+seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=debug, timeout=15)
 net, sta, quake, seis = seis_itr.next()
 preprocess(seis)
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
@@ -84,6 +86,7 @@ pickax = PickAx(seis,
                   finishFn=dosave,
                   creation_info = creation_info,
                   filters = filters, # allows toggling between fitlers
-                  figsize=(10,8)
+                  figsize=(10,8),
+                  debug=True,
                   )
 pickax.draw()

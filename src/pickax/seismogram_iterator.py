@@ -28,7 +28,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
         self.dc_name = dc_name
         self.quake_itr = quake_itr
         self.station_itr = station_itr
-        self.curr_quake = None
+        self.curr_quake = quake_itr.next()
         self.start_phases = start_phases
         self.start_offset = start_offset
         self.end_phases = end_phases
@@ -36,15 +36,15 @@ class FDSNSeismogramIterator(SeismogramIterator):
         self.taup_model = TauPyModel(model="ak135")
     def next(self):
         if self.curr_quake is None:
-            self.curr_quake = self.quake_itr.next()
-            if self.curr_quake is None:
-                return self.__empty__
+            return self.__empty__
         net, sta = self.station_itr.next()
-        while sta is None:
-            self.station_itr.beginning()
-            self.curr_quake = self.quake_itr.next()
-            if self.curr_quake is None:
+        if sta is None:
+            quake = self.quake_itr.next()
+            if quake is None:
                 return self.__empty__
+            self.curr_quake = quake
+            self.station_itr.beginning()
+            net, sta = self.station_itr.next()
         if sta is None or self.curr_quake is None:
             return self.__empty__
         return self.__load_seismograms__(net, sta, self.curr_quake, self.query_params)
@@ -52,7 +52,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
         if self.curr_quake is None:
             return self.__empty__
         net, sta = self.station_itr.prev()
-        while sta is None and self.curr_quake is not None:
+        if sta is None:
             self.curr_quake = self.quake_itr.prev()
             self.station_itr.ending()
             sta = self.station_itr.prev()

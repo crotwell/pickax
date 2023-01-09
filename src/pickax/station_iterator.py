@@ -24,7 +24,7 @@ class FDSNStationIterator(StationIterator):
         self.query_params = dict(query_params)
         if "level" not in query_params:
             self.query_params["level"] = "channel"
-        self.net_idx = -1
+        self.net_idx = 0
         self.sta_idx = -1
         self.inv = self.__load__()
 

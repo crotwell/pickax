@@ -49,12 +49,11 @@ class FDSNQuakeIterator(QuakeIterator):
         if self.dc_name == "USGS":
             quake = reloadQuakeMLWithPicks(quake)
             self.quakes[self.batch_idx] = quake
-        print(f"Quake: {self.batch_idx} {quake}  {len(quake.picks)}")
         return quake
     def prev(self):
-        if self.batch_idx < 1:
-            return None
         self.batch_idx -= 1
+        if self.batch_idx < 0:
+            return None
         return self.quakes[self.batch_idx]
     def beginning(self):
         self.batch_idx = -1
