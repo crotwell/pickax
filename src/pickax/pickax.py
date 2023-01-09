@@ -176,12 +176,14 @@ class PickAx:
         elif self.keymap[event.key] =="EAST":
             xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            self.seismograph_for_axes(event.inaxes).update_xlim(xmin+xwidth/2, xmax+xwidth/2)
+            for sg in self.seismographList:
+                sg.update_xlim(xmin+xwidth/2, xmax+xwidth/2)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="WEST":
             xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            self.seismograph_for_axes(event.inaxes).update_xlim(xmin-xwidth/2, xmax-xwidth/2)
+            for sg in self.seismographList:
+                sg.update_xlim(xmin-xwidth/2, xmax-xwidth/2)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
@@ -211,7 +213,6 @@ class PickAx:
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter+1)
             self.curr_filter += 1
-            print(f"filter {self.curr_filter}")
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "PREV_FILTER":
             if self.curr_filter < 0:
