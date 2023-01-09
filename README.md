@@ -42,8 +42,9 @@ pickax -s JKYD.mseed
 - f/F toggle to next/prev filter
 - v finish current seis, but don't quit, ie go to next
 - r finish current seis, go to previous
-- x, followed by second x zooms to selected time window
-- X, zoom out
+- x followed by second x zooms to selected time window
+- X zoom out
+- z original zoom
 - w shift left (west)
 - e shift right (east)
 - t print current mouse time and amplitude
