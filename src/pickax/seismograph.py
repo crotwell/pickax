@@ -218,7 +218,7 @@ class Seismograph:
         st = self._filtered_stream if self._filtered_stream is not None else self.stream
         for tr in st:
             tr_slice = tr.slice(tstart, tend)
-            if tr_slice is not None and tr_slice.data is not None:
+            if tr_slice is not None and tr_slice.data is not None and len(tr_slice.data) > 0:
                 calc_min = min(calc_min, tr_slice.data.min())
                 calc_max = max(calc_max, tr_slice.data.max())
         if calc_min > calc_max:
