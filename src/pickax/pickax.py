@@ -8,7 +8,6 @@ from IPython import get_ipython
 import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
-from .blit_manager import BlitManager
 from .seismograph import Seismograph
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 from .help import print_help
@@ -71,7 +70,6 @@ class PickAx:
         self.fig = plt.figure(figsize=self.figsize)
         plt.get_current_fig_manager().set_window_title('Pickax')
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
-        self.bm = BlitManager(self.fig.canvas, [])
         self._prev_zoom_time = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
@@ -127,7 +125,6 @@ class PickAx:
                 #ip.ask_exit()
                 #get_app().exit(exception=EOFError)
     def draw(self):
-        self.bm.clear()
         self.fig.clear()
         self.seismographList = []
         self.fig.canvas.draw_idle()
@@ -179,8 +176,8 @@ class PickAx:
                 sg.do_zoom_original()
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
-            time, amp = self.seismograph_for_axes(event.inaxes).do_mouse_position()
-            print(f"Time: {time} ({offset} s)  Amp: {amp}")
+            time, amp, offset = self.seismograph_for_axes(event.inaxes).mouse_time_amp(event)
+            print(f"Time: {time} ({offset:.3f} s)  Amp: {amp}")
         elif self.keymap[event.key] =="EAST":
             xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin

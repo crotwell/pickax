@@ -259,8 +259,12 @@ class Seismograph:
         self.unset_zoom_bound()
     def do_zoom_original(self):
         self.ax.set_xlim(auto=True)
-        self.zoom_amp()
+        self.ax.set_ylim(auto=True)
         self.unset_zoom_bound()
+        self.clear_flags()
+        self.clear_trace()
+        self.draw_stream()
+        self.draw_all_flags()
     def set_zoom_bound(self, art):
         self._zoom_bounds = [art]
     def unset_zoom_bound(self):
@@ -272,7 +276,7 @@ class Seismograph:
         offset = event.xdata
         time = self.start + offset
         amp = event.ydata
-        return time, amp
+        return time, amp, offset
     def update_xlim(self, xmin, xmax):
         self.ax.set_xlim(xmin, xmax)
         self.zoom_amp()
