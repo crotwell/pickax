@@ -228,14 +228,18 @@ class PickAx:
         pick_list = []
         for sg in self.seismographList:
             if include_station:
-                pick_list += sg.station_picks()
+                for p in sg.station_picks():
+                    if p not in pick_list:
+                        pick_list.append(p)
             else:
-                pick_list += sg.channel_picks()
+                for p in sg.channel_picks():
+                    if p not in pick_list:
+                        pick_list.append(p)
         if author is not None:
             pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
         return pick_list
 
-    def do_pick(self, event, phase=None):
+    def do_pick(self, event, phase="pick"):
         return self.seismograph_for_axes(event.inaxes).do_pick(event, phase)
     def seismograph_for_axes(self, ax):
         for sg in self.seismographList:

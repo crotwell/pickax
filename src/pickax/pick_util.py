@@ -9,7 +9,7 @@ def pick_to_string(p, qmlevent=None, start=None):
         amp = amplitude_for_pick(p, qmlevent)
 
     amp_str = f"amp: {amp.generic_amplitude}" if amp is not None else ""
-    pname = a.phase if a is not None else p.phase_hint
+    pname = a.phase if a is not None and a.phase is not None else p.phase_hint
     isArr = ", Pick" if a is None else ", Arrival"
     author = ""
     if p.creation_info.agency_id is not None:
