@@ -50,8 +50,10 @@ class PickAx:
                  creation_info=None,
                  filters = [],
                  figsize = (10,8),
-                 keymap = {}):
+                 keymap = {},
+                 debug=False):
         self._init_keymap(keymap)
+        self.debug = debug
 
 
         self.finishFn = finishFn
