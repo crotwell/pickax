@@ -37,8 +37,10 @@ def amplitude_for_pick( pick, qmlevent):
     earthquake. If more than one match, the first is returned, if none
     then None is returned.
     """
+    if pick.resource_id is None:
+        return None
     for a in qmlevent.amplitudes:
-        if pick.resource_id.id == a.pick_id.id:
+        if a.pick_id is not None and pick.resource_id.id == a.pick_id.id:
             return a
     return None
 
