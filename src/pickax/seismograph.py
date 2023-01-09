@@ -6,7 +6,6 @@ from obspy import read
 from IPython import get_ipython
 from prompt_toolkit.application.current import get_app
 
-from .blit_manager import BlitManager
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 
 
@@ -28,8 +27,10 @@ class Seismograph:
                  finishFn=None,
                  creation_info=None,
                  filters = [],
-                 keymap = {},
-                 bm = None):
+                 keymap = {}, ):
+        self._trace_artists = []
+        self._flag_artists = []
+        self._zoom_bounds = []
         self.ax = ax
         self.finishFn = finishFn
         self.creation_info = creation_info
@@ -39,10 +40,6 @@ class Seismograph:
             self.creation_info = obspy.core.event.base.CreationInfo(
                 author=os.getlogin()
                 )
-        if bm is not None:
-            self.bm = bm
-        else:
-            self.bm = BlitManager(self.get_figure().canvas, [])
         self._prev_zoom_time = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
@@ -83,12 +80,11 @@ class Seismograph:
         self.draw_stream()
         for pick in self.channel_picks():
             self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
-        # make sure our window is on the screen and drawn
     def draw_stream(self):
         draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         for trace in draw_stream:
-            (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5, animated=True)
-            self.bm.add_trace_artist(ln)
+            (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
+            self._trace_artists.append(ln)
 
     def station_picks(self):
         """
@@ -121,16 +117,16 @@ class Seismograph:
         color = "red"
         if arrival is not None:
             color = "blue"
-        (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
+        (ln,) = self.ax.plot(x,y,color=color, lw=1)
         label = None
         label_str = "pick"
         if arrival is not None:
             label_str = arrival.phase
         elif pick.phase_hint is not None:
             label_str = pick.phase_hint
-        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color, animated=True)
-        self.bm.add_flag_artist(ln)
-        self.bm.add_flag_artist(label)
+        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
+        self._flag_artists.append(ln)
+        self._flag_artists.append(label)
     def do_pick(self, event, phase="pick"):
         """
         Creates a pick based on a gui event, like keypress and mouse position.
@@ -168,25 +164,22 @@ class Seismograph:
                 self.qmlevent.amplitudes.append(a)
                 break
         self.draw_flag(p)
-        self.bm.update()
     def clear_trace(self):
         """
         Clears the waveforms from the display.
         """
-        for artist in self.bm._trace_artists:
+        for artist in self._trace_artists:
             artist.remove()
-            self.bm._artists.remove(artist)
-        self.bm._trace_artists = []
+            self._trace_artists.remove(artist)
     def clear_flags(self):
         """
         Clears pick flags from the display.
         """
-        for artist in self.bm._flag_artists:
+        for artist in self._flag_artists:
             artist.remove()
-            self.bm._artists.remove(artist)
-        self.bm._flag_artists = []
+            self._flag_artists.remove(artist)
         # also clear x zoom marker if present
-        self.bm.unset_zoom_bound()
+        self.unset_zoom_bound()
     def do_filter(self, idx):
         """
         Applies the idx-th filter to the waveform and redraws.
@@ -236,11 +229,11 @@ class Seismograph:
         self.ax.set_ylim(calc_min, calc_max)
     def unset_zoom(self):
             self._prev_zoom_time = None
-            self.bm.unset_zoom_bound()
+            self.unset_zoom_bound()
     def do_zoom(self, event):
         # event.key=="x":
         if self._prev_zoom_time is not None:
-            self.bm.unset_zoom_bound()
+            self.unset_zoom_bound()
             if event.xdata > self._prev_zoom_time:
                 self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
             else:
@@ -255,16 +248,21 @@ class Seismograph:
             x = [event.xdata, event.xdata]
             y = [mean-hw, mean+hw]
             color = "black"
-            (ln,) = self.ax.plot(x,y,color=color, lw=1, animated=True)
-            self.bm.set_zoom_bound(ln)
-            self.bm.update()
+            (ln,) = self.ax.plot(x,y,color=color, lw=1)
+            self.set_zoom_bound(ln)
 
     def do_zoom_out(self):
             xmin, xmax, ymin, ymax = self.ax.axis()
             xwidth = xmax - xmin
             self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
             self.zoom_amp()
-            self.bm.unset_zoom_bound()
+            self.unset_zoom_bound()
+    def set_zoom_bound(self, art):
+        self._zoom_bounds = [art]
+    def unset_zoom_bound(self):
+        for a in self._zoom_bounds:
+            a.remove()
+        self._zoom_bounds = []
 
     def mouse_time_amp(self, event):
             offset = event.xdata

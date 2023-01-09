@@ -137,9 +137,10 @@ class PickAx:
                             creation_info = self.creation_info,
                             filters = self.filters,
                             keymap = self.keymap,
-                            bm = self.bm)
+                            )
             sg.draw()
             self.seismographList.append(sg)
+        self.fig.tight_layout()
         self.fig.canvas.draw_idle()
         # make sure our window is on the screen and drawn
         plt.show(block=False)
@@ -167,7 +168,7 @@ class PickAx:
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] == "ZOOM_OUT":
             for sg in self.seismographList:
-                sg.do_zoom(event)
+                sg.do_zoom_out(event)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
             time, amp = self.seismograph_for_axes(event.inaxes).do_mouse_position()
@@ -191,12 +192,15 @@ class PickAx:
         elif self.keymap[event.key]  == "PICK_GENERIC":
             if event.inaxes is not None:
                 self.do_pick(event)
+            self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "PICK_P":
             if event.inaxes is not None:
                 self.do_pick(event, phase="P")
+            self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "PICK_S":
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
+            self.fig.canvas.draw_idle()
         elif self.keymap[event.key]  == "DISPLAY_PICKS":
             print(self.seismograph_for_axes(event.inaxes).display_picks(author=self.creation_info.author))
         elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
