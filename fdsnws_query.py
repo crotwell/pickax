@@ -68,7 +68,7 @@ sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
 
 quake_query_params = {
     "start": "2022-11-24T16:00:00",
-    "end":"2022-11-24T17:00:00",
+    "end":"2022-12-11T17:00:00",
     "minlatitude":34,
     "maxlatitude":35,
     "minlongitude":-81,
