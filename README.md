@@ -106,3 +106,8 @@ or if all deps are already installed, much faster:
 ```
 pip3 install dist/seismic_pickax-*-py3-none-any.whl --force-reinstall --no-deps
 ```
+
+to publish:
+```
+python3 -m twine upload dist/*
+```
