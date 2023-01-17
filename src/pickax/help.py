@@ -1,3 +1,4 @@
+from .version import __version__
 
 keymap_desc = {
     'PICK_GENERIC': "Create a generic pick at the current mouse location",
@@ -20,7 +21,7 @@ keymap_desc = {
 }
 
 def print_help(keymap):
-    print("Pickax")
+    print(f"Pickax {__version__}")
     print()
     print("Keys:")
     for k in keymap:

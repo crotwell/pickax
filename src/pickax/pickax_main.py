@@ -1,6 +1,7 @@
 from IPython import embed;
 from IPython.core.getipython import get_ipython
 from .pickax import PickAx
+from .version import __version__
 import obspy
 from obspy.core.event.base import CreationInfo
 import IPython
@@ -14,7 +15,7 @@ import argparse
 
 def do_parseargs():
     parser = argparse.ArgumentParser(
-        description="Pickax, really simple seismic phase picker."
+        description=f"Pickax, {__version__}, really simple seismic phase picker."
     )
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"

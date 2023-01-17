@@ -4,6 +4,7 @@ from .blit_manager import BlitManager
 from .quake_iterator import QuakeIterator, FDSNQuakeIterator
 from .station_iterator import StationIterator, FDSNStationIterator
 from .seismogram_iterator import SeismogramIterator, FDSNSeismogramIterator
+from .version import __version__ as version
 
 __all__ = [
     PickAx,
@@ -16,4 +17,5 @@ __all__ = [
     FDSNStationIterator,
     SeismogramIterator,
     FDSNSeismogramIterator,
+    version
 ]
