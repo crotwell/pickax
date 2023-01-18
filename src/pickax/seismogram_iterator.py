@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from obspy.clients.fdsn import Client
 from obspy.taup import TauPyModel
 from obspy.geodetics import locations2degrees
+from obspy.clients.fdsn.header import FDSNNoDataException
+from obspy.core import Stream
+
 
 class SeismogramIterator(ABC):
     def __init__(self):
@@ -91,4 +94,63 @@ class FDSNSeismogramIterator(SeismogramIterator):
         for c in sta.channels:
             locs.add(c.location_code)
             chans.add(c.code)
-        return net, sta, quake, client.get_waveforms(net.code, sta.code, ",".join(locs), ",".join(chans), s_time, e_time)
+        waveforms = None
+        try:
+            waveforms = client.get_waveforms(net.code, sta.code, ",".join(locs), ",".join(chans), s_time, e_time)
+        except FDSNNoDataException:
+            waveforms = []
+        return net, sta, quake, waveforms
+
+class ThreeAtATime(SeismogramIterator):
+    """
+    Iterates over a sub-SeismogramIterator grouping the resulting seismograms
+    into three-at-a-time components of motion. So a station with a seismometer
+    and a strong motion would be split into 2 iterations, first the HHZ, HHN, HHE
+    channels and then the HNZ, HNN, HNE channels.
+    """
+    def __init__(self, sub_itr):
+        self.sub_itr = sub_itr
+        self.sub_waveforms = []
+        self.sub_idx = -1
+        self.cur_net = None
+        self.cur_sta = None
+        self.cur_quake = None
+    def split_3c(self, net, sta, quake, waveforms):
+        self.sub_waveforms = []
+        self.sub_idx = -1
+        self.cur_net = net
+        self.cur_sta = sta
+        self.cur_quake = quake
+        for tr in waveforms:
+            found = False
+            for sub_st in self.sub_waveforms:
+                if sub_st[0].stats.channel[0] == tr.stats.channel[0] and \
+                        sub_st[0].stats.channel[1] == tr.stats.channel[1]:
+                    # same band and inst codes
+                    sub_st.append(tr)
+                    found = True
+                    break
+            if not found:
+                self.sub_waveforms.append(Stream(traces=[tr]))
+    def next(self):
+        self.sub_idx += 1
+        if len(self.sub_waveforms) > self.sub_idx:
+            return self.cur_net, self.cur_sta, self.cur_quake, self.sub_waveforms[self.sub_idx]
+        # load next batch
+        self.split_3c(*self.sub_itr.next())
+        self.sub_idx = 0
+        if len(self.sub_waveforms) > self.sub_idx:
+            return self.cur_net, self.cur_sta, self.cur_quake, self.sub_waveforms[self.sub_idx]
+        else:
+            return self.cur_net, self.cur_sta, self.cur_quake, []
+    def prev(self):
+        self.sub_idx -= 1
+        if self.sub_idx >= 0:
+            return self.cur_net, self.cur_sta, self.cur_quake, self.sub_waveforms[self.sub_idx]
+        # load next batch
+        self.split_3c(*self.sub_itr.prev())
+        self.sub_idx = len(self.sub_waveforms)-1
+        if self.sub_idx >= 0:
+            return self.cur_net, self.cur_sta, self.cur_quake, self.sub_waveforms[self.sub_idx]
+        else:
+            return self.cur_net, self.cur_sta, self.cur_quake, []

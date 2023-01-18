@@ -31,6 +31,8 @@ class FDSNStationIterator(StationIterator):
     def __load__(self):
         client = Client(self.dc_name, debug=self.debug)
         return client.get_stations(**self.query_params)
+    def current(self):
+        return self.inv.networks[self.net_idx], self.inv.networks[self.net_idx].stations[self.sta_idx]
     def next(self):
         self.sta_idx += 1
         if self.net_idx >= len(self.inv.networks):
