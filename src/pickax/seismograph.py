@@ -86,6 +86,7 @@ class Seismograph:
         self.clear_flags()
         for pick in self.channel_picks():
             self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
+        self.draw_origin_flag()
     def station_picks(self):
         """
         Finds all picks in the earthquake whose waveform_id matches the
@@ -103,6 +104,24 @@ class Seismograph:
         chan_code = self.stream[0].stats.channel
         sta_picks = self.station_picks()
         return filter(lambda p: p.waveform_id.location_code == loc_code and p.waveform_id.channel_code == chan_code, sta_picks)
+    def draw_origin_flag(self):
+        """
+        Draws flag for the origin.
+        """
+        if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
+            at_time = self.qmlevent.preferred_origin().time - self.start
+            xmin, xmax, ymin, ymax = self.ax.axis()
+            mean = (ymin+ymax)/2
+            hw = 0.9*(ymax-ymin)/2
+            x = [at_time, at_time]
+            y = [mean-hw, mean+hw]
+            color = "green"
+            (ln,) = self.ax.plot(x,y,color=color, lw=1)
+            label = None
+            label_str = "origin"
+            label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
+            self._flag_artists.append(ln)
+            self._flag_artists.append(label)
 
     def draw_flag(self, pick, arrival=None):
         """
@@ -294,4 +313,6 @@ class Seismograph:
         return chans.strip()
 
     def calc_start(self):
+        if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
+            return self.qmlevent.preferred_origin().time
         return min([trace.stats.starttime for trace in self.stream])
