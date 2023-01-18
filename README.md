@@ -22,13 +22,14 @@ options:
   -s SEIS, --seis SEIS  Seismogram file, loaded at startup
 ```
 
-For example, using `simple.py` to initialize pickax, load data and open the picker window:
+For example, using [simple.py](https://github.com/crotwell/pickax/blob/main/simple.py)
+to initialize pickax, load some data from files and open the picker window:
 
 ```
 pickax -l simple.py
 ```
 
-Or to view just a single file, ie quick look:
+Or to view just a single miniseed file, ie quick look:
 ```
 pickax -s JKYD.mseed
 ```
