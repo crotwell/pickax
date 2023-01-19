@@ -70,6 +70,9 @@ primarily for author or agency_id, defaulting to `author=os.getlogin()`.
 
 See [simple.py](https://raw.githubusercontent.com/crotwell/pickax/main/simple.py) for an example of setting up pickax and loading data.
 
+The [fdsnws_query.py](https://raw.githubusercontent.com/crotwell/pickax/main/fdsnws_query.py) is another example that uses FDSN web
+services to load data on the fly.
+
 # Filter functions
 
 Filters are often a way of applying actual time series filters, but can
@@ -87,10 +90,14 @@ the original was modified in place.
 # Finish function
 
 The finish function is called whenever the user quits, goes to next or previous,
-ie `q`, `v` or `r`. It is called with three arguments, first is the QuakeML
+ie `q`, `v` or `r`. It is called with four arguments, first is the QuakeML
 Event, which contains picks, including both new picks and any existing picks.
-Second is the current stream, useful to get the channel. Last is the command,
-one of "quit", "next", or "prev".
+Second is the current stream, useful to get the channel. Third is the command,
+one of "quit", "next", or "prev" and the last is pickax itself.
+
+For next and prev, you generally will call
+`pickax.update_data()` passing in a new stream and optionally
+quake and inventory if they have changed.
 
 # build hints
 
