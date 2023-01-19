@@ -85,7 +85,7 @@ class Seismograph:
     def draw_all_flags(self):
         self.clear_flags()
         for pick in self.channel_picks():
-            self.draw_flag(pick, arrival_for_pick(pick, self.qmlevent))
+            self.draw_pick_flag(pick, arrival_for_pick(pick, self.qmlevent))
         self.draw_origin_flag()
     def station_picks(self):
         """
@@ -123,7 +123,7 @@ class Seismograph:
             self._flag_artists.append(ln)
             self._flag_artists.append(label)
 
-    def draw_flag(self, pick, arrival=None):
+    def draw_pick_flag(self, pick, arrival=None):
         """
         Draws flag for a pick.
         """
@@ -182,7 +182,7 @@ class Seismograph:
                 a.creation_info = p.creation_info
                 self.qmlevent.amplitudes.append(a)
                 break
-        self.draw_flag(p)
+        self.draw_pick_flag(p)
     def clear_trace(self):
         """
         Clears the waveforms from the display.
