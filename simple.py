@@ -35,12 +35,13 @@ pickax = None
 # function called on quit, next or prev, allows saving of picks however you wish
 # here we save the quake as QuakeML, which will include the picks, and then
 # load the next seismogram if possible
-def dosave(qmlevent, stream, command):
+def dosave(qmlevent, stream, command, pickax):
     global curr_idx
-    global pickax
-    station_code = stream[0].stats.station
-    out_cat = obspy.Catalog([qmlevent])
-    out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
+    # first time through qmlevent will be None and stream will be empty
+    if qmlevent is not None and len(stream) != 0:
+        station_code = stream[0].stats.station
+        out_cat = obspy.Catalog([qmlevent])
+        out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
     if command == "next":
         curr_idx += 1
     elif command == "prev":
@@ -75,20 +76,12 @@ def pick_station(station_code, qmlevent_file, creation_info):
         catalog = obspy.read_events(qmlevent_file)
     qmlevent = catalog[0] if len(catalog) > 0 else None
 
-    if not os.path.exists(f'{station_code}.mseed'):
-        print(f'file {station_code}.mseed does not seem to exist.')
-        return
-    st = obspy.read(f'{station_code}.mseed')
-    preprocess(st)
-
-    pickax = PickAx(st,
-                      qmlevent=qmlevent,
-                      finishFn=dosave,
-                      creation_info = creation_info,
-                      filters = filters, # allows toggling between fitlers
-                      figsize=(10,8)
-                      )
-    pickax.draw()
+    pickax = PickAx(qmlevent=qmlevent,
+                    finishFn=dosave,
+                    creation_info = creation_info,
+                    filters = filters, # allows toggling between fitlers
+                    figsize=(10,8),
+                    )
     return pickax
 
 # get ready and...

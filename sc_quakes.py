@@ -35,17 +35,18 @@ debug = False
 # function called on quit, next or prev, allows saving of picks however you wish
 # here we save the quake as QuakeML, which will include the picks, and then
 # load the next seismogram if possible
-def dosave(qmlevent, stream, command):
-    global pickax
+def dosave(qmlevent, stream, command, pickax):
     global seis_itr, sta_itr, quake_itr
-    station_code = stream[0].stats.station
-    out_cat = obspy.Catalog([qmlevent])
-    out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
-    all_pick_lines = pickax.display_picks(author=pickax.creation_info.author)
-    if len(all_pick_lines) > 0:
-        with open(f"{qmlevent.preferred_origin().time}_picks.txt", "a", encoding="utf-8") as outtxt:
-            for line in all_pick_lines:
-                outtxt.write(line)
+    # first time through qmlevent will be None and stream will be empty
+    if qmlevent is not None and len(stream) != 0:
+        station_code = stream[0].stats.station
+        out_cat = obspy.Catalog([qmlevent])
+        out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
+        all_pick_lines = pickax.display_picks(author=pickax.creation_info.author)
+        if len(all_pick_lines) > 0:
+            with open(f"{qmlevent.preferred_origin().time}_picks.txt", "a", encoding="utf-8") as outtxt:
+                for line in all_pick_lines:
+                    outtxt.write(line)
     seis = [] # force while to run
     sta = "dummy"
     quake = "dummy"
@@ -100,16 +101,11 @@ quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
 # at each station that has both
 seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, start_offset = -30, end_offset=120, debug=debug, timeout=15))
-net, sta, quake, seis = seis_itr.next()
-preprocess(seis, sta_itr.inv)
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
-pickax = PickAx(seis,
-                  qmlevent=quake,
-                  finishFn=dosave,
-                  creation_info = creation_info,
-                  filters = filters, # allows toggling between fitlers
-                  figsize=(10,8),
-                  debug=True,
-                  )
-pickax.draw()
+pickax = PickAx(finishFn=dosave,
+                creation_info = creation_info,
+                filters = filters, # allows toggling between fitlers
+                figsize=(10,8),
+                debug=True,
+                )

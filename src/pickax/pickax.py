@@ -46,7 +46,7 @@ class PickAx:
     keymap -- optional dictionary of key to function
     """
     def __init__(self,
-                 stream,
+                 stream=None,
                  qmlevent=None,
                  finishFn=None,
                  creation_info=None,
@@ -58,11 +58,17 @@ class PickAx:
         self.debug = debug
         self.scroll_factor = 8
 
+        self.stream = stream if stream is not None else Stream()
+        self.qmlevent = qmlevent
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
         self.figsize = figsize
-        self._init_data_(stream, qmlevent)
+        self.display_groups = []
+        self.seismographList = []
+        self.start = None
+        self.curr_filter = -1
+        self._filtered_stream = None
         if creation_info is None and os.getlogin() is not None:
             self.creation_info = obspy.core.event.base.CreationInfo(
                 author=os.getlogin()
@@ -71,6 +77,11 @@ class PickAx:
         plt.get_current_fig_manager().set_window_title('Pickax')
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self._prev_zoom_time = None
+        if stream is None or len(stream) == 0:
+            self.do_finish("next")
+        else:
+            self._init_data_(stream, qmlevent)
+            self.draw()
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
         if qmlevent is not None:
@@ -101,11 +112,10 @@ class PickAx:
         """
         Updates waveform and optionally earthquake and redraws.
         """
-        if qmlevent is not None:
-            self._init_data_(stream, qmlevent)
-        else:
+        if qmlevent is None:
             # reuse current event
-            self._init_data_(stream, self.qmlevent)
+            qmlevent = self.qmlevent
+        self._init_data_(stream, qmlevent)
         self.draw()
     def do_finish(self, command):
         """
@@ -115,7 +125,7 @@ class PickAx:
         the next or previous seismogram.
         """
         if self.finishFn is not None:
-            self.finishFn(self.qmlevent, self.stream, command)
+            self.finishFn(self.qmlevent, self.stream, command, self)
         else:
             print(self.display_picks())
             self.close()
