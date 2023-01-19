@@ -9,12 +9,13 @@ from pickax import (
 
 # helper function, perhaps to preprocess the stream before picking
 def preprocess(stream, inv):
-    stream.detrend()
-    # deconvolution prefiltering, 10 sec to 45 Hz
-    pre_filt = [0.02, 0.1, 45, 50]
-    for tr in stream:
-        tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
-
+    if "preprocessed" not in stream[0].stats:
+        stream.detrend()
+        # deconvolution prefiltering, 10 sec to 45 Hz
+        pre_filt = [0.02, 0.1, 45, 50]
+        for tr in stream:
+            tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
+            tr.stats["preprocessed"] = True
 
 # create a few filters, will be able to toggle between them with the 'f' key
 def lpfilter(original_stream, current_stream, prevFilter, idx):

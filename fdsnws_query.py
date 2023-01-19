@@ -14,7 +14,12 @@ from pickax import (
 
 # helper function, perhaps to preprocess the stream before picking
 def preprocess(stream):
-    stream.detrend()
+    # check for preprocessed to see if already done
+    if "preprocessed" not in stream[0].stats:
+        stream.detrend()
+        for tr in stream:
+            # remind us we have seen this before
+            tr.stats["preprocessed"] = True
 
 # create a few filters, will be able to toggle between them with the 'f' key
 def lpfilter(original_stream, current_stream, prevFilter, idx):
