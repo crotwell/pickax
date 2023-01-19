@@ -1,5 +1,9 @@
 import os
-from pickax import FDSNQuakeIterator, FDSNStationIterator, FDSNSeismogramIterator
+from pickax import (
+    FDSNQuakeIterator, FDSNStationIterator,
+    FDSNSeismogramIterator,
+    CacheSeismogramIterator
+    )
 
 # to get some test data, this uses an event in South Carolina,
 # near Lugoff-Elgin on Oct 31, 2022
@@ -78,6 +82,7 @@ quake_query_params = {
 quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 
 seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=debug, timeout=15)
+seis_itr = CacheSeismogramIterator(seis_itr)
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
 pickax = PickAx(

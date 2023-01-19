@@ -1,8 +1,9 @@
 import os
 from obspy.clients.fdsn.header import FDSNNoDataException
 from pickax import (
-    FDSNQuakeIterator, FDSNStationIterator, FDSNSeismogramIterator,
-    ThreeAtATime
+    FDSNQuakeIterator, FDSNStationIterator,
+    FDSNSeismogramIterator,
+    CacheSeismogramIterator
     )
 
 # helper function, perhaps to preprocess the stream before picking
@@ -101,6 +102,7 @@ quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
 # at each station that has both
 seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, start_offset = -30, end_offset=120, debug=debug, timeout=15))
+seis_itr = CacheSeismogramIterator(seis_itr)
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
 pickax = PickAx(finishFn=dosave,

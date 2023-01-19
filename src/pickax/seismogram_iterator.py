@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import deque
 from obspy.clients.fdsn import Client
 from obspy.taup import TauPyModel
 from obspy.geodetics import locations2degrees
@@ -15,6 +16,35 @@ class SeismogramIterator(ABC):
     @abstractmethod
     def prev(self):
         return self.__empty__
+
+class CacheSeismogramIterator(SeismogramIterator):
+    """
+    Very simple cache, remembers prev, curr and next data
+    for up to size items
+    """
+    def __init__(self, sub_itr, size=10):
+        self.sub_itr = sub_itr
+        self.size = size
+        self.__curr_data__ = None
+        self.__prev_cache__ = deque([], size)
+        self.__next_cache__ = deque([], size)
+    def next(self):
+        if self.__curr_data__ is not None:
+            self.__prev_cache__.append(self.__curr_data__)
+        if len(self.__next_cache__) > 0:
+            self.__curr_data__ = self.__next_cache__.pop()
+        else:
+            self.__curr_data__ = self.sub_itr.next()
+        return self.__curr_data__
+    def prev(self):
+        if self.__curr_data__ is not None:
+            self.__next_cache__.append(self.__curr_data__)
+        if len(self.__prev_cache__) > 0:
+            self.__curr_data__ = self.__prev_cache__.pop()
+        else:
+            self.__curr_data__ = self.sub_itr.prev()
+        return self.__curr_data__
+
 
 class FDSNSeismogramIterator(SeismogramIterator):
     def __init__(self,
