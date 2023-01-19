@@ -148,12 +148,13 @@ class PickAx:
                 #ip = get_ipython()
                 #ip.ask_exit()
                 #get_app().exit(exception=EOFError)
-    def draw(self):
+    def clear(self):
         self.fig.clear()
         self.seismographList = []
         self.fig.canvas.draw_idle()
+    def draw(self):
+        self.clear()
         position = 1
-        prev_sta = None
         for trList in self.display_groups:
             ax = self.fig.add_subplot(len(self.display_groups),1,position)
             position += 1
