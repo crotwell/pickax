@@ -5,12 +5,36 @@ from pickax import (
     CacheSeismogramIterator
     )
 
-# to get some test data, this uses an event in South Carolina,
-# near Lugoff-Elgin on Oct 31, 2022
-#
-# curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HHZ&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# curl -o JSC.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HHZ&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# curl -o elgin.qml 'https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=se60414656&format=quakeml'
+# author info for picks, your name here...
+creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
+
+# show prediceted travel times for these phases
+phase_list = ['P', 'S', 'p', 's']
+
+# parameters for selecting earthquakes, server defaults to USGS
+sta_query_params = {
+    "network": "CO",
+    "station": "BIRD,JSC,JKYD",
+    "channel": "HH?,HNZ",
+}
+# station/channel parameters, server defaults to IRIS
+quake_query_params = {
+    "start": "2022-11-24T16:00:00",
+    "end": "2022-12-11T17:00:00",
+    "minlatitude": 34,
+    "maxlatitude": 35,
+    "minlongitude": -81,
+    "maxlongitude": -79,
+}
+# calculate time window from predicted traveltimes for phases and offsets
+# origin is allowed as a phase name to base offsets on origin time of quake
+seis_params = {
+    "start_phases": "origin",
+    "end_phases": "origin",
+    "start_offset": -30,
+    "end_offset": 120,
+}
+
 
 # helper function, perhaps to preprocess the stream before picking
 def preprocess(stream):
@@ -69,29 +93,16 @@ def dosave(qmlevent, stream, command, pickax):
         pickax.close()
 
 # Load stations, events and seismograms
-sta_query_params = {
-    "network": "CO",
-    "station": "BIRD,JSC,JKYD",
-    "channel": "HH?,HNZ"
-}
 sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
 
-quake_query_params = {
-    "start": "2022-11-24T16:00:00",
-    "end":"2022-12-11T17:00:00",
-    "minlatitude":34,
-    "maxlatitude":35,
-    "minlongitude":-81,
-    "maxlongitude":-79
-}
 quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 
-seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=debug, timeout=15)
+seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, **seis_params, debug=debug, timeout=15)
 seis_itr = CacheSeismogramIterator(seis_itr)
-creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
 pickax = PickAx(
                 finishFn=dosave,
+                phase_list = phase_list,
                 creation_info = creation_info,
                 inventory=sta_itr.inv,
                 filters = filters, # allows toggling between fitlers

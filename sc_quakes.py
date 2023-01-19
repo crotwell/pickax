@@ -6,6 +6,41 @@ from pickax import (
     ThreeAtATime,
     CacheSeismogramIterator,
     )
+# author info for picks, your name here...
+creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
+
+# show prediceted travel times for these phases
+phase_list = ['P', 'S', 'p', 's']
+
+# parameters for selecting earthquakes, server defaults to USGS
+quake_query_params = {
+    "start": "2021-12-27T00:00:00",
+    "minlatitude":33,
+    "maxlatitude":35,
+    "minlongitude":-82,
+    "maxlongitude":-80,
+    "minmag": 3.0,
+}
+# station/channel parameters, server defaults to IRIS
+sta_query_params = {
+    "network": "CO,TA,N4,US",
+    "start": "2021-12-27T00:00:00",
+    "minlatitude":32,
+    "maxlatitude":35,
+    "minlongitude":-82,
+    "maxlongitude":-80,
+    "channel": "HH?,HN?",
+    "level": "response",
+}
+
+# calculate time window from predicted traveltimes for phases and offsets
+# origin is allowed as a phase name to base offsets on origin time of quake
+seis_params = {
+    "start_phases": "origin",
+    "end_phases": "origin",
+    "start_offset": -30,
+    "end_offset": 120,
+}
 
 # helper function, perhaps to preprocess the stream before picking
 def preprocess(stream, inv):
@@ -18,9 +53,6 @@ def preprocess(stream, inv):
             tr.stats["preprocessed"] = True
 
 # create a few filters, will be able to toggle between them with the 'f' key
-def lpfilter(original_stream, current_stream, prevFilter, idx):
-    return original_stream.filter('lowpass', freq=1.0,  corners=1, zerophase=True)
-
 def bpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('bandpass', freqmin=1, freqmax=10.0, corners=1, zerophase=True)
 
@@ -78,40 +110,21 @@ def dosave(qmlevent, stream, command, pickax):
         pickax.close()
 
 # Load stations, events and seismograms
-sta_query_params = {
-    "network": "CO,TA,N4,US",
-    "start": "2021-12-27T00:00:00",
-    "minlatitude":32,
-    "maxlatitude":35,
-    "minlongitude":-82,
-    "maxlongitude":-80,
-    "channel": "HH?,HN?",
-    "level": "response",
-}
 sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
-
-
-quake_query_params = {
-    "start": "2021-12-27T00:00:00",
-    "minlatitude":33,
-    "maxlatitude":35,
-    "minlongitude":-82,
-    "maxlongitude":-80,
-    "minmag": 3.0,
-}
 quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 
 # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
 # at each station that has both
 seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, start_offset = -30, end_offset=120, debug=debug, timeout=15))
+# cache make prev/next a bit faster if data is already here
 seis_itr = CacheSeismogramIterator(seis_itr)
-creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
+
 # start digging!
 pickax = PickAx(finishFn=dosave,
                 inventory=sta_itr.inv,
                 creation_info = creation_info,
                 filters = filters, # allows toggling between fitlers
-                phase_list = ['P', 'S', 'p', 's'],
+                phase_list = phase_list,
                 figsize=(10,8),
                 debug=True,
                 )
