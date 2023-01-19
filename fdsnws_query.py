@@ -88,6 +88,7 @@ creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 pickax = PickAx(
                 finishFn=dosave,
                 creation_info = creation_info,
+                inventory=sta_itr.inv,
                 filters = filters, # allows toggling between fitlers
                 figsize=(10,8),
                 debug=True,

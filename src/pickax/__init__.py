@@ -9,6 +9,7 @@ from .seismogram_iterator import (
     ThreeAtATime,
     CacheSeismogramIterator,
     )
+from .traveltime import TravelTimeCalc
 from .version import __version__ as version
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     FDSNSeismogramIterator,
     ThreeAtATime,
     CacheSeismogramIterator,
+    TravelTimeCalc,
     version
 ]

@@ -22,11 +22,14 @@ class Seismograph:
     keymap -- optional dictionary of key to function
     """
     def __init__(self,
-                 ax, stream,
+                 ax,
+                 stream,
                  qmlevent=None,
+                 inventory=None,
                  finishFn=None,
                  creation_info=None,
                  filters = [],
+                 traveltime_calc = None,
                  keymap = {}, ):
         self._trace_artists = []
         self._flag_artists = []
@@ -35,6 +38,8 @@ class Seismograph:
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
+        self.inventory = inventory
+        self.traveltime_calc = traveltime_calc
         self._init_data_(stream, qmlevent)
         if creation_info is None and os.getlogin() is not None:
             self.creation_info = obspy.core.event.base.CreationInfo(
@@ -78,12 +83,13 @@ class Seismograph:
         self.draw_stream()
         self.draw_all_flags()
     def draw_stream(self):
-        draw_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
-        for trace in draw_stream:
+        filt_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
+        for trace in filt_stream:
             (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
             self._trace_artists.append(ln)
     def draw_all_flags(self):
         self.clear_flags()
+        self.draw_predicted_flags()
         for pick in self.channel_picks():
             self.draw_pick_flag(pick, arrival_for_pick(pick, self.qmlevent))
         self.draw_origin_flag()
@@ -109,43 +115,38 @@ class Seismograph:
         Draws flag for the origin.
         """
         if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
-            at_time = self.qmlevent.preferred_origin().time - self.start
-            xmin, xmax, ymin, ymax = self.ax.axis()
-            mean = (ymin+ymax)/2
-            hw = 0.9*(ymax-ymin)/2
-            x = [at_time, at_time]
-            y = [mean-hw, mean+hw]
-            color = "green"
-            (ln,) = self.ax.plot(x,y,color=color, lw=1)
-            label = None
-            label_str = "origin"
-            label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
-            self._flag_artists.append(ln)
-            self._flag_artists.append(label)
+            self.draw_flag(self.qmlevent.preferred_origin().time, "origin", color="green")
 
     def draw_pick_flag(self, pick, arrival=None):
         """
         Draws flag for a pick.
         """
-        at_time = pick.time - self.start
-        xmin, xmax, ymin, ymax = self.ax.axis()
-        mean = (ymin+ymax)/2
-        hw = 0.9*(ymax-ymin)/2
-        x = [at_time, at_time]
-        y = [mean-hw, mean+hw]
+
         color = "red"
         if arrival is not None:
             color = "blue"
-        (ln,) = self.ax.plot(x,y,color=color, lw=1)
-        label = None
+
         label_str = "pick"
         if arrival is not None:
             label_str = arrival.phase
         elif pick.phase_hint is not None:
             label_str = pick.phase_hint
-        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
-        self._flag_artists.append(ln)
-        self._flag_artists.append(label)
+        self.draw_flag(pick.time, label_str, color=color)
+    def draw_predicted_flags(self):
+        if self.traveltime_calc is not None \
+                 and self.qmlevent is not None \
+                and self.qmlevent.preferred_origin() is not None:
+            otime = self.qmlevent.preferred_origin().time
+            filt_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
+            for trace in filt_stream:
+                tr_inv = self.find_channel(trace)
+                if tr_inv is not None and len(tr_inv) > 0 and len(tr_inv[0]) > 0:
+                    sta = tr_inv[0][0]  # first sta in first net
+                    arrivals = self.traveltime_calc.calculate(sta, self.qmlevent)
+                    for arr in arrivals:
+                        self.draw_flag(otime + arr.time, arr.name, "grey")
+                else:
+                    print("can't find inv for tr")
     def do_pick(self, event, phase="pick"):
         """
         Creates a pick based on a gui event, like keypress and mouse position.
@@ -199,6 +200,18 @@ class Seismograph:
             self._flag_artists.remove(artist)
         # also clear x zoom marker if present
         self.unset_zoom_bound()
+    def draw_flag(self, time, label_str, color="black"):
+        at_time = time - self.start
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        mean = (ymin+ymax)/2
+        hw = 0.9*(ymax-ymin)/2
+        x = [at_time, at_time]
+        y = [mean-hw, mean+hw]
+        (ln,) = self.ax.plot(x,y,color=color, lw=1)
+        label = None
+        label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
+        self._flag_artists.append(ln)
+        self._flag_artists.append(label)
     def do_filter(self, idx):
         """
         Applies the idx-th filter to the waveform and redraws.
@@ -311,7 +324,20 @@ class Seismograph:
             if nslc not in chans:
                 chans = f"{chans} {nslc}"
         return chans.strip()
-
+    def find_channel(self, tr):
+        if self.inventory is None:
+            print("Seismograph inv is None")
+            return None
+        net_code = tr.stats.network
+        sta_code = tr.stats.station
+        loc_code = tr.stats.location
+        chan_code = tr.stats.channel
+        return self.inventory.select(network=net_code,
+                                  station=sta_code,
+                                  location=loc_code,
+                                  channel=chan_code,
+                                  time=tr.stats.starttime,
+                                  )
     def calc_start(self):
         if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
             return self.qmlevent.preferred_origin().time

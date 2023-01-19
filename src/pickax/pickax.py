@@ -1,6 +1,7 @@
 import sys
 import os
 import obspy
+from obspy.taup import TauPyModel
 import numpy
 from obspy import read
 from obspy.core import Stream
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
 from .seismograph import Seismograph
+from .traveltime import TravelTimeCalc
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 from .help import print_help
 
@@ -48,21 +50,30 @@ class PickAx:
     def __init__(self,
                  stream=None,
                  qmlevent=None,
+                 inventory =None,
                  finishFn=None,
                  creation_info=None,
                  filters = [],
+                 phase_list = [],
+                 model = None,
                  figsize = (10,8),
                  keymap = {},
                  debug=False):
+        if len(phase_list) > 0 and inventory is None:
+            print("Warning: phase_list given but no inventory, unable to calculate travel times without a station location")
         self._init_keymap(keymap)
         self.debug = debug
         self.scroll_factor = 8
 
         self.stream = stream if stream is not None else Stream()
         self.qmlevent = qmlevent
+        self.inventory = inventory
         self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
+        self.phase_list = phase_list
+        self.model = model if model is not None else TauPyModel("ak135")
+        self.taveltime_calc = TravelTimeCalc(self.phase_list, self.model)
         self.figsize = figsize
         self.display_groups = []
         self.seismographList = []
@@ -80,10 +91,13 @@ class PickAx:
         if stream is None or len(stream) == 0:
             self.do_finish("next")
         else:
-            self._init_data_(stream, qmlevent)
+            self._init_data_(stream, qmlevent, inventory)
             self.draw()
-    def _init_data_(self, stream, qmlevent=None):
+    def _init_data_(self, stream, qmlevent=None, inventory=None):
         self.stream = stream
+        if inventory is not None:
+            # keep old inventory, often it is correct
+            self.inventory = inventory
         if qmlevent is not None:
             self.qmlevent = qmlevent
         else:
@@ -108,14 +122,14 @@ class PickAx:
             self.keymap[k] = v
         for k,v in keymap.items():
             self.keymap[k] = v
-    def update_data(self, stream, qmlevent=None):
+    def update_data(self, stream, qmlevent=None, inventory=None):
         """
         Updates waveform and optionally earthquake and redraws.
         """
         if qmlevent is None:
             # reuse current event
             qmlevent = self.qmlevent
-        self._init_data_(stream, qmlevent)
+        self._init_data_(stream, qmlevent, inventory)
         self.draw()
     def do_finish(self, command):
         """
@@ -139,15 +153,18 @@ class PickAx:
         self.seismographList = []
         self.fig.canvas.draw_idle()
         position = 1
+        prev_sta = None
         for trList in self.display_groups:
             ax = self.fig.add_subplot(len(self.display_groups),1,position)
             position += 1
             sg = Seismograph(ax, trList,
                             qmlevent = self.qmlevent,
+                            inventory = self.inventory,
                             finishFn = self.finishFn,
                             creation_info = self.creation_info,
                             filters = self.filters,
                             keymap = self.keymap,
+                            traveltime_calc = self.taveltime_calc,
                             )
             sg.draw()
             self.seismographList.append(sg)

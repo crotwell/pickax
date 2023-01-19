@@ -3,7 +3,8 @@ from obspy.clients.fdsn.header import FDSNNoDataException
 from pickax import (
     FDSNQuakeIterator, FDSNStationIterator,
     FDSNSeismogramIterator,
-    CacheSeismogramIterator
+    ThreeAtATime,
+    CacheSeismogramIterator,
     )
 
 # helper function, perhaps to preprocess the stream before picking
@@ -106,8 +107,10 @@ seis_itr = CacheSeismogramIterator(seis_itr)
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
 # start digging!
 pickax = PickAx(finishFn=dosave,
+                inventory=sta_itr.inv,
                 creation_info = creation_info,
                 filters = filters, # allows toggling between fitlers
+                phase_list = ['P', 'S', 'p', 's'],
                 figsize=(10,8),
                 debug=True,
                 )
