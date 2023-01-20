@@ -204,17 +204,31 @@ class PickAx:
                 sg.do_zoom_original()
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="CURR_MOUSE":
+            if event.inaxes is None:
+                return
             time, amp, offset = self.seismograph_for_axes(event.inaxes).mouse_time_amp(event)
             print(f"Time: {time} ({offset:.3f} s)  Amp: {amp}")
         elif self.keymap[event.key] =="EAST":
-            xmin, xmax, ymin, ymax = event.inaxes.axis()
+            if event.inaxes is None:
+                if len(self.seismographList) > 0:
+                    xmin, xmax, ymin, ymax = self.seismographList[0].ax.axis()
+                else:
+                    return
+            else:
+                xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
             xshift = xwidth/self.scroll_factor
             for sg in self.seismographList:
                 sg.update_xlim(xmin-xshift, xmax-xshift)
             self.fig.canvas.draw_idle()
         elif self.keymap[event.key] =="WEST":
-            xmin, xmax, ymin, ymax = event.inaxes.axis()
+            if event.inaxes is None:
+                if len(self.seismographList) > 0:
+                    xmin, xmax, ymin, ymax = self.seismographList[0].ax.axis()
+                else:
+                    return
+            else:
+                xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
             xshift = xwidth/self.scroll_factor
             for sg in self.seismographList:
