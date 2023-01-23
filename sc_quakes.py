@@ -79,7 +79,8 @@ def dosave(qmlevent, stream, command, pickax):
         out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
         all_pick_lines = pickax.display_picks(author=pickax.creation_info.author)
         if len(all_pick_lines) > 0:
-            with open(f"{qmlevent.preferred_origin().time}_picks.txt", "a", encoding="utf-8") as outtxt:
+            pickfilename=qmlevent.preferred_origin().time.strftime("picks_%d.%m.%y_h%Hm%Ms%S.txt")
+            with open(pickfilename, "a", encoding="utf-8") as outtxt:
                 for line in all_pick_lines:
                     outtxt.write(line)
     seis = [] # force while to run
