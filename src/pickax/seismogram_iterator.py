@@ -154,7 +154,8 @@ class ThreeAtATime(SeismogramIterator):
         for tr in waveforms:
             found = False
             for sub_st in self.sub_waveforms:
-                if sub_st[0].stats.channel[0] == tr.stats.channel[0] and \
+                if sub_st[0].stats.location == tr.stats.location and \
+                        sub_st[0].stats.channel[0] == tr.stats.channel[0] and \
                         sub_st[0].stats.channel[1] == tr.stats.channel[1]:
                     # same band and inst codes
                     sub_st.append(tr)
