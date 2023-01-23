@@ -86,17 +86,22 @@ def dosave(qmlevent, stream, command, pickax):
     sta = "dummy"
     quake = "dummy"
     if command == "next":
+        net, sta, quake, seis = seis_itr.next()
         while len(seis) == 0 and sta is not None and quake is not None:
+            print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
             net, sta, quake, seis = seis_itr.next()
     elif command == "prev":
+        net, sta, quake, seis = seis_itr.prev()
         while len(seis) == 0 and sta is not None and quake is not None:
+            print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
             net, sta, quake, seis = seis_itr.prev()
     else:
         # quit
         return
 
     if len(seis) == 0:
-        print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
+        print(f"No more to do...")
+        pickax.close()
     elif sta is not None and quake is not None:
         all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
         print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
