@@ -10,7 +10,9 @@ from .seismogram_iterator import (
     CacheSeismogramIterator,
     )
 from .traveltime import TravelTimeCalc
-from .version import __version__ as version
+from .version import __version__
+
+version = __version__
 
 __all__ = [
     PickAx,

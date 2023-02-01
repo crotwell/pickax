@@ -65,6 +65,7 @@ class PickAx:
         self.debug = debug
         self.scroll_factor = 8
 
+        self.titleFn = default_titleFn
         self.stream = stream if stream is not None else Stream()
         self.qmlevent = qmlevent
         self.inventory = inventory
@@ -102,6 +103,7 @@ class PickAx:
             self.qmlevent = qmlevent
         else:
             self.qmlevent = obspy.core.event.Event()
+
         self.display_groups = []
         self.seismographList = []
         uniq_chan_traces = {}
@@ -109,8 +111,8 @@ class PickAx:
             if trace.id not in uniq_chan_traces:
                 uniq_chan_traces[trace.id] = Stream()
             uniq_chan_traces[trace.id].append(trace)
-        sortedCodes = sorted(list(uniq_chan_traces.keys()))
-        for code in sortedCodes:
+        sortedChannelCodes = sorted(list(uniq_chan_traces.keys()))
+        for code in sortedChannelCodes:
             self.display_groups.append(uniq_chan_traces[code])
 
         self.start = self.calc_start()
@@ -154,6 +156,9 @@ class PickAx:
         self.fig.canvas.draw_idle()
     def draw(self):
         self.clear()
+        title = self.titleFn(self.stream, self.qmlevent, self.inventory)
+        if title is not None and len(title) > 0:
+            self.fig.suptitle(title)
         position = 1
         for trList in self.display_groups:
             ax = self.fig.add_subplot(len(self.display_groups),1,position)
@@ -331,3 +336,15 @@ class PickAx:
         return "\n".join(lines)
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])
+
+def default_titleFn(stream=None, qmlevent=None, inventory=None):
+    origin_str = "Unknown quake"
+    mag_str = ""
+    if qmlevent.preferred_origin() is not None:
+        origin = qmlevent.preferred_origin()
+        origin_str = f"{origin.time} ({origin.latitude}/{origin.longitude}) {origin.depth/1000}km"
+    if qmlevent.preferred_magnitude() is not None:
+        mag = qmlevent.preferred_magnitude()
+        mag_str = f"{mag.mag} {mag.magnitude_type}"
+    print(f"titleFn: {origin_str} {mag_str}")
+    return f"{origin_str} {mag_str}"
