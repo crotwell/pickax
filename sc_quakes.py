@@ -76,7 +76,8 @@ def dosave(qmlevent, stream, command, pickax):
     if qmlevent is not None and len(stream) != 0:
         station_code = stream[0].stats.station
         out_cat = obspy.Catalog([qmlevent])
-        out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
+        quake_time_str=qmlevent.preferred_origin().time.strftime("%d.%m.%y_h%Hm%Ms%S.qml")
+        out_cat.write(f"event_{quake_time_str}.qml", format='QUAKEML')
         all_pick_lines = pickax.display_picks(author=pickax.creation_info.author)
         if len(all_pick_lines) > 0:
             pickfilename=qmlevent.preferred_origin().time.strftime("picks_%d.%m.%y_h%Hm%Ms%S.txt")
