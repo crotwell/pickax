@@ -346,5 +346,4 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
     if qmlevent.preferred_magnitude() is not None:
         mag = qmlevent.preferred_magnitude()
         mag_str = f"{mag.mag} {mag.magnitude_type}"
-    print(f"titleFn: {origin_str} {mag_str}")
     return f"{origin_str} {mag_str}"
