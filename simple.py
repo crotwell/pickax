@@ -1,4 +1,6 @@
 import os
+from obspy import Catalog
+from pickax import merge_picks_to_catalog
 
 # to get some test data, this uses an event in South Carolina,
 # near Lugoff-Elgin on Oct 31, 2022
@@ -41,7 +43,7 @@ def dosave(qmlevent, stream, command, pickax):
     if qmlevent is not None and len(stream) != 0:
         station_code = stream[0].stats.station
         out_cat = obspy.Catalog([qmlevent])
-        out_cat.write(f"{station_code}_pick.qml", format='QUAKEML')
+        out_cat.write(f"pick_elgin.qml", format='QUAKEML')
     if command == "next":
         curr_idx += 1
     elif command == "prev":
@@ -75,6 +77,15 @@ def pick_station(station_code, qmlevent_file, creation_info):
     else:
         catalog = obspy.read_events(qmlevent_file)
     qmlevent = catalog[0] if len(catalog) > 0 else None
+
+    saved_catalog = Catalog()
+    saved_pick_file = 'pick_elgin.qml'
+    if not os.path.exists(f'{saved_pick_file}'):
+        print(f'file {saved_pick_file} does not seem to exist, skipping load picks.')
+    else:
+        saved_catalog = obspy.read_events(saved_pick_file)
+        for oldquake in saved_catalog:
+            merge_picks_to_catalog(oldquake, catalog, author=creation_info.author)
 
     pickax = PickAx(qmlevent=qmlevent,
                     finishFn=dosave,

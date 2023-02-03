@@ -50,6 +50,49 @@ def pick_from_trace(pick, trace):
             pick.waveform_id.location_code == trace.stats.location and
             pick.waveform_id.channel_code == trace.stats.channel )
 
+def merge_picks_to_quake(qmlevent, out_qmlevent, author=None):
+    """
+    Merges picks from one quake to the other.
+    """
+    pick_list = qmlevent.picks
+    if author is not None:
+        pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
+    to_add = []
+    for p in pick_list:
+        found = False
+        for catp in out_qmlevent.picks:
+            if p.time == catp.time and \
+                p.creation_info.author == catp.creation_info.author:
+                found = True
+                break
+        if not found:
+            to_add.append(p)
+    out_qmlevent.picks = out_qmlevent.picks + to_add
+    for p in to_add:
+        arr = arrival_for_pick(p, qmlevent)
+        if arr is not None:
+            # ?? what origin to add too
+            out_qmlevent.preferred_origin().arrivals.append(arr)
+        amp = amplitude_for_pick(p, qmlevent)
+        if amp is not None:
+            out_qmlevent.amplitudes.append(amp)
+
+def merge_picks_to_catalog(qmlevent, catalog, author=None):
+    id = extractEventId(qmlevent)
+    pick_list = qmlevent.picks
+    if author is not None:
+        pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
+    found_quake = False
+    for q in catalog:
+        if extractEventId(q) == id:
+            found_quake = True
+            merge_picks_to_quake(qmlevent, q, author=author)
+            break
+    if not found_quake:
+        catalog.append(qmlevent)
+    return catalog
+
+
 def UNKNOWN_PUBLIC_ID():
     length = 8
     letters = string.ascii_lowercase

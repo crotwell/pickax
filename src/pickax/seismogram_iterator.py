@@ -4,7 +4,7 @@ from obspy.clients.fdsn import Client
 from obspy.taup import TauPyModel
 from obspy.geodetics import locations2degrees
 from obspy.clients.fdsn.header import FDSNNoDataException
-from obspy.core import Stream
+from obspy import Stream
 
 
 class SeismogramIterator(ABC):
@@ -128,7 +128,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
         try:
             waveforms = client.get_waveforms(net.code, sta.code, ",".join(locs), ",".join(chans), s_time, e_time)
         except FDSNNoDataException:
-            waveforms = []
+            waveforms = Stream()
         return net, sta, quake, waveforms
 
 class ThreeAtATime(SeismogramIterator):

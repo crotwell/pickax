@@ -5,9 +5,15 @@ from pickax import (
     FDSNSeismogramIterator,
     ThreeAtATime,
     CacheSeismogramIterator,
+    merge_picks_to_catalog,
+    merge_picks_to_quake,
+    extractEventId,
     )
+from obspy import Catalog
+
 # author info for picks, your name here...
 creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
+all_picks_qml_file = "picks_sc_quakes.qml"
 
 # show prediceted travel times for these phases
 phase_list = ['P', 'S', 'p', 's']
@@ -74,6 +80,13 @@ def dosave(qmlevent, stream, command, pickax):
     global seis_itr, sta_itr, quake_itr
     # first time through qmlevent will be None and stream will be empty
     if qmlevent is not None and len(stream) != 0:
+        # update all_picks_qml_file
+        saved_catalog = Catalog()
+        if os.path.exists(f'{all_picks_qml_file}'):
+            saved_catalog = obspy.read_events(all_picks_qml_file)
+        merge_picks_to_catalog(qmlevent, saved_catalog)
+        saved_catalog.write(all_picks_qml_file, format='QUAKEML')
+
         station_code = stream[0].stats.station
         out_cat = obspy.Catalog([qmlevent])
         quake_time_str=qmlevent.preferred_origin().time.strftime("%d.%m.%y_h%Hm%Ms%S.qml")
@@ -105,6 +118,15 @@ def dosave(qmlevent, stream, command, pickax):
         print(f"No more to do...")
         pickax.close()
     elif sta is not None and quake is not None:
+        # check to see if any old saved quakes from same event
+        saved_catalog = Catalog()
+        if os.path.exists(f'{all_picks_qml_file}'):
+            saved_catalog = obspy.read_events(all_picks_qml_file)
+        id = extractEventId(quake)
+        for oldquake in saved_catalog:
+            if extractEventId(oldquake) == id:
+                merge_picks_to_quake(oldquake, quake, author=creation_info.author)
+
         all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
         print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
         preprocess(seis, sta_itr.inv)

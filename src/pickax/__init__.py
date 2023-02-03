@@ -1,4 +1,9 @@
-from .pick_util import reloadQuakeMLWithPicks, extractEventId
+from .pick_util import (
+    reloadQuakeMLWithPicks,
+    extractEventId,
+    merge_picks_to_catalog,
+    merge_picks_to_quake,
+    )
 from .pickax import PickAx
 from .blit_manager import BlitManager
 from .quake_iterator import QuakeIterator, FDSNQuakeIterator
@@ -18,6 +23,8 @@ __all__ = [
     PickAx,
     BlitManager,
     reloadQuakeMLWithPicks,
+    merge_picks_to_catalog,
+    merge_picks_to_quake,
     extractEventId,
     QuakeIterator,
     FDSNQuakeIterator,

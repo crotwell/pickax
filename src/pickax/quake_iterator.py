@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from obspy import UTCDateTime
+from obspy import UTCDateTime, Catalog
 from obspy.clients.fdsn.header import FDSNException
+from obspy.clients.fdsn.header import FDSNNoDataException
 from obspy.clients.fdsn import Client
 from .pick_util import reloadQuakeMLWithPicks, extractEventId
 
 class QuakeIterator(ABC):
     def __init__(self):
-        self.quakes = []
+        self.quakes = Catalog([])
     @abstractmethod
     def next(self):
         return None
@@ -28,8 +29,12 @@ class FDSNQuakeIterator(QuakeIterator):
         self.quakes = self.next_batch()
         self.batch_idx = -1
     def next_batch(self):
-        client = Client(self.dc_name, debug=self.debug)
-        return client.get_events(**self.query_params)
+        try:
+            client = Client(self.dc_name, debug=self.debug)
+            return client.get_events(**self.query_params)
+        except FDSNNoDataException:
+            # return empty catalog instaed of exception
+            return Catalog([])
     def next_batch_step(self):
         client = Client(self.dc_name)
         t1 = self.__curr_end
@@ -37,7 +42,11 @@ class FDSNQuakeIterator(QuakeIterator):
         step_query_params = dict(self.query_params)
         step_query_params['start'] = t1
         step_query_params['end'] = t2
-        self.quakes = client.get_events(**step_query_params)
+        try:
+            self.quakes = client.get_events(**step_query_params)
+        except FDSNNoDataException:
+            # return empty catalog instaed of exception
+            self.quakes =  Catalog([])
         end = UTCDateTime(query_params["end"])
         if len(self.quakes) == 0 and step_query_params['end'] < end:
             return self.next_batch_step()

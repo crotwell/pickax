@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from obspy.clients.fdsn import Client
+from obspy import Inventory
+from obspy.clients.fdsn.header import FDSNNoDataException
 
 
 class StationIterator(ABC):
@@ -29,8 +31,11 @@ class FDSNStationIterator(StationIterator):
         self.inv = self.__load__()
 
     def __load__(self):
-        client = Client(self.dc_name, debug=self.debug)
-        return client.get_stations(**self.query_params)
+        try:
+            client = Client(self.dc_name, debug=self.debug)
+            return client.get_stations(**self.query_params)
+        except FDSNNoDataException:
+            return Inventory()
     def current(self):
         return self.inv.networks[self.net_idx], self.inv.networks[self.net_idx].stations[self.sta_idx]
     def next(self):
