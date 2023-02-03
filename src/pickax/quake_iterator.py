@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from obspy import UTCDateTime
+from obspy.clients.fdsn.header import FDSNException
 from obspy.clients.fdsn import Client
 from .pick_util import reloadQuakeMLWithPicks, extractEventId
 
@@ -21,6 +22,7 @@ class FDSNQuakeIterator(QuakeIterator):
         self.debug = debug
         self.dc_name = dc_name
         self.query_params = dict(query_params)
+        self.query_params['orderby'] = 'time-asc'
         self.days_step = days_step
         self.__curr_end = UTCDateTime(query_params["start"]) if query_params["start"] else UTCDateTime()
         self.quakes = self.next_batch()
