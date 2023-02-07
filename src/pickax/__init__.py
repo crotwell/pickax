@@ -6,7 +6,11 @@ from .pick_util import (
     )
 from .pickax import PickAx
 from .blit_manager import BlitManager
-from .quake_iterator import QuakeIterator, FDSNQuakeIterator
+from .quake_iterator import (
+    QuakeIterator,
+    FDSNQuakeIterator,
+    QuakeMLFileIterator
+    )
 from .station_iterator import StationIterator, FDSNStationIterator
 from .seismogram_iterator import (
     SeismogramIterator,
@@ -27,6 +31,7 @@ __all__ = [
     merge_picks_to_quake,
     extractEventId,
     QuakeIterator,
+    QuakeMLFileIterator,
     FDSNQuakeIterator,
     StationIterator,
     FDSNStationIterator,

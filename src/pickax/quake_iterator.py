@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from obspy import UTCDateTime, Catalog
+from obspy import UTCDateTime, Catalog, read_events
 from obspy.clients.fdsn.header import FDSNException
 from obspy.clients.fdsn.header import FDSNNoDataException
 from obspy.clients.fdsn import Client
@@ -17,6 +17,25 @@ class QuakeIterator(ABC):
     @abstractmethod
     def beginning(self):
         pass
+
+class QuakeMLFileIterator(QuakeIterator):
+    def __init__(self, file):
+        self.quakes = read_events(file)
+    def next(self):
+        self.batch_idx += 1
+        if self.batch_idx >= len(self.quakes):
+            #self.next_batch()
+            return None
+        quake = self.quakes[self.batch_idx]
+        return quake
+    def prev(self):
+        self.batch_idx -= 1
+        if self.batch_idx < 0:
+            self.batch_idx = -1
+            return None
+        return self.quakes[self.batch_idx]
+    def beginning(self):
+        self.batch_idx = -1
 
 class FDSNQuakeIterator(QuakeIterator):
     def __init__(self, query_params, days_step=30, dc_name="USGS", debug=False):
@@ -37,7 +56,7 @@ class FDSNQuakeIterator(QuakeIterator):
             # return empty catalog instaed of exception
             return Catalog([])
     def next_batch_step(self):
-        client = Client(self.dc_name)
+        client = Client(self.dc_name, debug=self.debug)
         t1 = self.__curr_end
         t2 = t1 + self.days_step*86400
         step_query_params = dict(self.query_params)
@@ -59,12 +78,14 @@ class FDSNQuakeIterator(QuakeIterator):
             return None
         quake = self.quakes[self.batch_idx]
         if self.dc_name == "USGS":
-            quake = reloadQuakeMLWithPicks(quake)
+            print(f"Attempt to reload with picks {extractEventId(quake)}")
+            quake = reloadQuakeMLWithPicks(quake, host=self.dc_name, debug=self.debug)
             self.quakes[self.batch_idx] = quake
         return quake
     def prev(self):
         self.batch_idx -= 1
         if self.batch_idx < 0:
+            self.batch_idx = -1
             return None
         return self.quakes[self.batch_idx]
     def beginning(self):
