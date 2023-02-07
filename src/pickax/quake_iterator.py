@@ -23,7 +23,8 @@ class FDSNQuakeIterator(QuakeIterator):
         self.debug = debug
         self.dc_name = dc_name
         self.query_params = dict(query_params)
-        self.query_params['orderby'] = 'time-asc'
+        if 'orderby' not in self.query_params:
+            self.query_params['orderby'] = 'time-asc'
         self.days_step = days_step
         self.__curr_end = UTCDateTime(query_params["start"]) if query_params["start"] else UTCDateTime()
         self.quakes = self.next_batch()
