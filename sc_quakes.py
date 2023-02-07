@@ -141,6 +141,7 @@ def dosave(qmlevent, stream, command, pickax):
 # Load stations, events and seismograms
 sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
 quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
+print(f"Number of quakes: {len(quake_itr.quakes)}")
 
 # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
 # at each station that has both
