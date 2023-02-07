@@ -26,6 +26,7 @@ quake_query_params = {
     "minlongitude":-82,
     "maxlongitude":-80,
     "minmag": 3.0,
+    "orderby": "time-asc",
 }
 # station/channel parameters, server defaults to IRIS
 sta_query_params = {
