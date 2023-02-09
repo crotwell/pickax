@@ -134,3 +134,8 @@ to publish:
 ```
 python3 -m twine upload dist/*
 ```
+
+for testing, use code in current directory so updates on edit:
+```
+pip install -v -e .
+```
