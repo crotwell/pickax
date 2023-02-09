@@ -30,3 +30,5 @@ dependencies = [
 [project.scripts]
     "pickax" = "pickax.pickax_main:main"
     "usgspicks" = "pickax.usgspicks:main"
+    "mergepicks" = "pickax.mergepicks:main"
+    "dumppicks" = "pickax.dumppicks:main"
