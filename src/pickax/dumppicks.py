@@ -21,7 +21,7 @@ def do_parseargs():
     parser.add_argument(
         "-a",
         "--author",
-        help="only copy picks from given author, defaults to all",
+        help="only show picks from given author, defaults to all",
         default=None,
     )
     return parser.parse_args()
