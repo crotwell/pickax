@@ -14,27 +14,6 @@ from .traveltime import TravelTimeCalc
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 from .help import print_help
 
-# remember help.py if adding to keymap
-DEFAULT_KEYMAP = {
-    'c': "PICK_GENERIC",
-    'a': "PICK_P",
-    's': "PICK_S",
-    'd': "DISPLAY_PICKS",
-    'D': "DISPLAY_ALL_PICKS",
-    'f': "NEXT_FILTER",
-    'F': "PREV_FILTER",
-    'x': "ZOOM_IN",
-    'X': "ZOOM_OUT",
-    'z': "ZOOM_ORIG",
-    'w': "WEST",
-    'e': "EAST",
-    't': "CURR_MOUSE",
-    'v': "GO_NEXT",
-    'r': "GO_PREV",
-    'q': "GO_QUIT",
-    'h': "HELP",
-}
-
 class PickAx:
     """
     PickAx, a simple seismic picker, when you just need to dig a few
@@ -42,50 +21,24 @@ class PickAx:
 
     stream -- usually a waveform for a single channel
     qmlevent -- optional QuakeML Event to store picks in, created if not supplied
-    finishFn -- a callback function for when the next (v) or prev (r) keys are pressed
-    creation_info -- default creation info for the pick, primarily for author or agency_id
-    filters -- list of filters, f cycles through these redrawing the waveform
-    keymap -- optional dictionary of key to function
+    config -- configuration object
     """
     def __init__(self,
                  stream=None,
                  qmlevent=None,
                  inventory =None,
-                 finishFn=None,
-                 creation_info=None,
-                 filters = [],
-                 phase_list = [],
-                 model = None,
-                 figsize = (10,8),
-                 keymap = {},
-                 debug=False):
-        if len(phase_list) > 0 and inventory is None:
-            print("Warning: phase_list given but no inventory, unable to calculate travel times without a station location")
-        self._init_keymap(keymap)
-        self.debug = debug
-        self.scroll_factor = 8
-
-        self.titleFn = default_titleFn
+                 config=None):
+        self.config = config
         self.stream = stream if stream is not None else Stream()
         self.qmlevent = qmlevent
         self.inventory = inventory
-        self.finishFn = finishFn
-        self.creation_info = creation_info
-        self.filters = filters
-        self.phase_list = phase_list
-        self.model = model if model is not None else TauPyModel("ak135")
-        self.taveltime_calc = TravelTimeCalc(self.phase_list, self.model)
-        self.figsize = figsize
+        self.taveltime_calc = TravelTimeCalc(self.config.phase_list, self.config.model)
         self.display_groups = []
         self.seismographList = []
         self.start = None
         self.curr_filter = -1
         self._filtered_stream = None
-        if creation_info is None and os.getlogin() is not None:
-            self.creation_info = obspy.core.event.base.CreationInfo(
-                author=os.getlogin()
-                )
-        self.fig = plt.figure(figsize=self.figsize)
+        self.fig = plt.figure(figsize=self.config.figsize)
         plt.get_current_fig_manager().set_window_title('Pickax')
         self.fig.canvas.mpl_connect('key_press_event', lambda evt: self.on_key(evt))
         self._prev_zoom_time = None
@@ -118,12 +71,6 @@ class PickAx:
         self.start = self.calc_start()
         self.curr_filter = -1
         self._filtered_stream = None
-    def _init_keymap(self, keymap):
-        self.keymap = {}
-        for k,v in DEFAULT_KEYMAP.items():
-            self.keymap[k] = v
-        for k,v in keymap.items():
-            self.keymap[k] = v
     def update_data(self, stream, qmlevent=None, inventory=None):
         """
         Updates waveform and optionally earthquake and redraws.
@@ -140,8 +87,8 @@ class PickAx:
         the finish function is responsible for calling update_data with
         the next or previous seismogram.
         """
-        if self.finishFn is not None:
-            self.finishFn(self.qmlevent, self.stream, command, self)
+        if self.config.finishFn is not None:
+            self.config.finishFn(self.qmlevent, self.stream, command, self)
         else:
             print(self.display_picks())
             self.close()
@@ -156,7 +103,7 @@ class PickAx:
         self.fig.canvas.draw_idle()
     def draw(self):
         self.clear()
-        title = self.titleFn(self.stream, self.qmlevent, self.inventory)
+        title = self.config.titleFn(self.stream, self.qmlevent, self.inventory)
         if title is not None and len(title) > 0:
             self.fig.suptitle(title)
         position = 1
@@ -166,12 +113,12 @@ class PickAx:
             sg = Seismograph(ax, trList,
                             qmlevent = self.qmlevent,
                             inventory = self.inventory,
-                            finishFn = self.finishFn,
-                            creation_info = self.creation_info,
-                            filters = self.filters,
-                            keymap = self.keymap,
+                            creation_info = self.config.creation_info,
+                            filters = self.config.filters,
+                            keymap = self.config.keymap,
                             traveltime_calc = self.taveltime_calc,
                             )
+            sg.flagcolorFn = self.config.flagcolorFn
             sg.draw()
             self.seismographList.append(sg)
         self.fig.tight_layout()
@@ -188,32 +135,32 @@ class PickAx:
         """
         Event handler for key presses.
         """
-        if event.key not in self.keymap:
+        if event.key not in self.config.keymap:
             if event.key != "shift":
                 print(f"unknown key function: {event.key}")
             return
-        if self.keymap[event.key] != "ZOOM_IN":
+        if self.config.keymap[event.key] != "ZOOM_IN":
             for sg in self.seismographList:
                 sg.unset_zoom()
 
-        if self.keymap[event.key] == "ZOOM_IN":
+        if self.config.keymap[event.key] == "ZOOM_IN":
             for sg in self.seismographList:
                 sg.do_zoom(event)
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] == "ZOOM_OUT":
+        elif self.config.keymap[event.key] == "ZOOM_OUT":
             for sg in self.seismographList:
                 sg.do_zoom_out()
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] == "ZOOM_ORIG":
+        elif self.config.keymap[event.key] == "ZOOM_ORIG":
             for sg in self.seismographList:
                 sg.do_zoom_original()
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="CURR_MOUSE":
+        elif self.config.keymap[event.key] =="CURR_MOUSE":
             if event.inaxes is None:
                 return
             time, amp, offset = self.seismograph_for_axes(event.inaxes).mouse_time_amp(event)
             print(f"Time: {time} ({offset:.3f} s)  Amp: {amp}")
-        elif self.keymap[event.key] =="EAST":
+        elif self.config.keymap[event.key] =="EAST":
             if event.inaxes is None:
                 if len(self.seismographList) > 0:
                     xmin, xmax, ymin, ymax = self.seismographList[0].ax.axis()
@@ -222,11 +169,11 @@ class PickAx:
             else:
                 xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            xshift = xwidth/self.scroll_factor
+            xshift = xwidth/self.config.scroll_factor
             for sg in self.seismographList:
                 sg.update_xlim(xmin-xshift, xmax-xshift)
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="WEST":
+        elif self.config.keymap[event.key] =="WEST":
             if event.inaxes is None:
                 if len(self.seismographList) > 0:
                     xmin, xmax, ymin, ymax = self.seismographList[0].ax.axis()
@@ -235,49 +182,50 @@ class PickAx:
             else:
                 xmin, xmax, ymin, ymax = event.inaxes.axis()
             xwidth = xmax - xmin
-            xshift = xwidth/self.scroll_factor
+            xshift = xwidth/self.config.scroll_factor
             for sg in self.seismographList:
                 sg.update_xlim(xmin+xshift, xmax+xshift)
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key] =="GO_QUIT":
+        elif self.config.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
-        elif self.keymap[event.key]  == "GO_NEXT":
+        elif self.config.keymap[event.key]  == "GO_NEXT":
             self.do_finish("next")
-        elif self.keymap[event.key]  == "GO_PREV":
+        elif self.config.keymap[event.key]  == "GO_PREV":
             self.do_finish("prev")
-        elif self.keymap[event.key]  == "PICK_GENERIC":
+        elif self.config.keymap[event.key]  == "PICK_GENERIC":
             if event.inaxes is not None:
                 self.do_pick(event)
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key]  == "PICK_P":
+        elif self.config.keymap[event.key]  == "PICK_P":
             if event.inaxes is not None:
                 self.do_pick(event, phase="P")
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key]  == "PICK_S":
+        elif self.config.keymap[event.key]  == "PICK_S":
             if event.inaxes is not None:
                 self.do_pick(event, phase="S")
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key]  == "DISPLAY_PICKS":
-            print(self.display_picks(author=self.creation_info.author))
-        elif self.keymap[event.key]  == "DISPLAY_ALL_PICKS":
+        elif self.config.keymap[event.key]  == "DISPLAY_PICKS":
+            print(self.display_picks(author=self.config.creation_info.author))
+        elif self.config.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
-        elif self.keymap[event.key]  == "NEXT_FILTER":
-            if self.curr_filter == len(self.filters)-1:
+        elif self.config.keymap[event.key]  == "NEXT_FILTER":
+            print(f"next filter: {self.curr_filter}")
+            if self.curr_filter == len(self.config.filters)-1:
                 self.curr_filter = -2
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter+1)
             self.curr_filter += 1
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key]  == "PREV_FILTER":
+        elif self.config.keymap[event.key]  == "PREV_FILTER":
             if self.curr_filter < 0:
-                self.curr_filter = len(self.filters)
+                self.curr_filter = len(self.config.filters)
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter-1)
             self.curr_filter -= 1
             print(self.curr_filter)
             self.fig.canvas.draw_idle()
-        elif self.keymap[event.key]  == "HELP":
-            print_help(self.keymap)
+        elif self.config.keymap[event.key]  == "HELP":
+            print_help(self.config.keymap)
         else:
             print(f"Oops, key={event.key}")
 
@@ -336,14 +284,3 @@ class PickAx:
         return "\n".join(lines)
     def calc_start(self):
         return min([trace.stats.starttime for trace in self.stream])
-
-def default_titleFn(stream=None, qmlevent=None, inventory=None):
-    origin_str = "Unknown quake"
-    mag_str = ""
-    if qmlevent.preferred_origin() is not None:
-        origin = qmlevent.preferred_origin()
-        origin_str = f"{origin.time} ({origin.latitude}/{origin.longitude}) {origin.depth/1000}km"
-    if qmlevent.preferred_magnitude() is not None:
-        mag = qmlevent.preferred_magnitude()
-        mag_str = f"{mag.mag} {mag.magnitude_type}"
-    return f"{origin_str} {mag_str}"

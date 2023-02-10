@@ -5,6 +5,7 @@ from .pick_util import (
     merge_picks_to_quake,
     )
 from .pickax import PickAx
+from .pickax_config import PickAxConfig
 from .blit_manager import BlitManager
 from .quake_iterator import (
     QuakeIterator,
@@ -25,6 +26,7 @@ version = __version__
 
 __all__ = [
     PickAx,
+    PickAxConfig,
     BlitManager,
     reloadQuakeMLWithPicks,
     merge_picks_to_catalog,

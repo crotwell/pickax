@@ -1,6 +1,6 @@
 import os
 from obspy import Catalog
-from pickax import merge_picks_to_catalog
+from pickax import PickAxConfig, merge_picks_to_catalog
 
 # to get some test data, this uses an event in South Carolina,
 # near Lugoff-Elgin on Oct 31, 2022
@@ -9,6 +9,10 @@ from pickax import merge_picks_to_catalog
 # curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
 # curl -o JSC.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
 # curl -o elgin.qml 'https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=se60414656&format=quakeml'
+
+me = "Jane Smith"
+creation_info = CreationInfo(author=me, version="0.0.1")
+
 
 # helper function, perhaps to preprocess the stream before picking
 def preprocess(stream):
@@ -29,6 +33,33 @@ filters = [
     { "name": "bandpass", "fn": bpfilter},
     { "name": "highpass", "fn": hpfilter},
 ]
+
+# color picks by author
+author_colors = {
+    me: "lime",
+    "Freddie Freeloader": "purple",
+    "Minnie the Mooch": "seagreen",
+}
+def flagcolorFn(pick, arrival):
+    print("color fn")
+    color = None # none means use built in defaults, red and blue
+    if pick is None and arrival is None:
+        color = None
+    elif arrival is not None:
+        # usually means pick used in official location
+        color = "blue"
+    else:
+        pick_author = ""
+        if pick.creation_info.agency_id is not None:
+            pick_author += pick.creation_info.agency_id+" "
+        if pick.creation_info.author is not None:
+            pick_author += pick.creation_info.author+ " "
+        pick_author = pick_author.strip()
+        if pick_author in author_colors:
+            color = author_colors[pick_author]
+        print(f"color fn {pick_author} -> {color}")
+    return color
+
 
 # remember who and where we are
 curr_idx = 0
@@ -70,7 +101,7 @@ def dosave(qmlevent, stream, command, pickax):
         pickax.close()
 
 # helper function to check if files exist and start up PickAx
-def pick_station(station_code, qmlevent_file, creation_info):
+def pick_station(station_code, qmlevent_file):
     catalog = []
     if not os.path.exists(f'{qmlevent_file}'):
         print(f'file {qmlevent_file} does not seem to exist, skipping.')
@@ -88,16 +119,21 @@ def pick_station(station_code, qmlevent_file, creation_info):
             merge_picks_to_catalog(oldquake, catalog, author=creation_info.author)
 
     pickax = PickAx(qmlevent=qmlevent,
-                    finishFn=dosave,
-                    creation_info = creation_info,
-                    filters = filters, # allows toggling between fitlers
-                    figsize=(10,8),
+                    config=pickax_config ,
                     )
     return pickax
 
 # get ready and...
 station_codes = ["JKYD", "JSC", "BIRD"]
 evt_qml = "elgin.qml"
-info = CreationInfo(author="Jane Smith", version="0.0.1")
+
+
+# Configure the tool
+pickax_config = PickAxConfig()
+pickax_config.creation_info = creation_info
+pickax_config.finishFn=dosave
+pickax_config.filters = filters
+pickax_config.flagcolorFn = flagcolorFn
+
 # start digging!
-pickax = pick_station(station_codes[0], evt_qml, info)
+pickax = pick_station(station_codes[0], evt_qml)

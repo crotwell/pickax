@@ -16,7 +16,6 @@ class Seismograph:
 
     stream -- usually a waveform for a single channel
     qmlevent -- optional QuakeML Event to store picks in, created if not supplied
-    finishFn -- a callback function for when the next (v) or prev (r) keys are pressed
     creation_info -- default creation info for the pick, primarily for author or agency_id
     filters -- list of filters, f cycles through these redrawing the waveform
     keymap -- optional dictionary of key to function
@@ -26,7 +25,6 @@ class Seismograph:
                  stream,
                  qmlevent=None,
                  inventory=None,
-                 finishFn=None,
                  creation_info=None,
                  filters = [],
                  traveltime_calc = None,
@@ -35,11 +33,11 @@ class Seismograph:
         self._flag_artists = []
         self._zoom_bounds = []
         self.ax = ax
-        self.finishFn = finishFn
         self.creation_info = creation_info
         self.filters = filters
         self.inventory = inventory
         self.traveltime_calc = traveltime_calc
+        self.flagcolorFn = None
         self._init_data_(stream, qmlevent)
         if creation_info is None and os.getlogin() is not None:
             self.creation_info = obspy.core.event.base.CreationInfo(
@@ -122,9 +120,7 @@ class Seismograph:
         Draws flag for a pick.
         """
 
-        color = "red"
-        if arrival is not None:
-            color = "blue"
+        color = self.color_for_flag(pick, arrival)
 
         label_str = "pick"
         if arrival is not None:
@@ -216,6 +212,7 @@ class Seismograph:
         """
         Applies the idx-th filter to the waveform and redraws.
         """
+        print(f"sq do_filter {idx}")
         self.clear_trace()
         self.clear_flags()
         if idx < 0 or idx >= len(self.filters):
@@ -342,3 +339,13 @@ class Seismograph:
         if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
             return self.qmlevent.preferred_origin().time
         return min([trace.stats.starttime for trace in self.stream])
+
+    def color_for_flag(self, pick, arrival=None):
+        color = None
+        if self.flagcolorFn is not None:
+            color = self.flagcolorFn(pick, arrival)
+        if color is None:
+            color = "red"
+            if arrival is not None:
+                color = "blue"
+        return color

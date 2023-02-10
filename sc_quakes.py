@@ -1,6 +1,7 @@
 import os
 from obspy.clients.fdsn.header import FDSNNoDataException
 from pickax import (
+    PickAxConfig,
     FDSNQuakeIterator, FDSNStationIterator,
     FDSNSeismogramIterator,
     ThreeAtATime,
@@ -12,7 +13,13 @@ from pickax import (
 from obspy import Catalog
 
 # author info for picks, your name here...
-creation_info = CreationInfo(author="Jane Smith", version="0.0.1")
+me = "Jane Smith"
+creation_info = CreationInfo(author=me, version="0.0.1")
+author_colors = {
+    me: "lime",
+    "Freddie Freeloader": "purple",
+    "Minnie the Mooch": "seagreen",
+}
 all_picks_qml_file = "picks_sc_quakes.qml"
 
 # show prediceted travel times for these phases
@@ -71,6 +78,24 @@ filters = [
     { "name": "highpass 1", "fn": hpfilter},
 ]
 
+def flagcolorFn(pick, arrival):
+    color = None # none means use built in defaults, red and blue
+    if pick is None and arrival is None:
+        color = None
+    elif arrival is not None:
+        # usually means pick used in official location
+        color = "blue"
+    else:
+        pick_author = ""
+        if pick.creation_info.agency_id is not None:
+            pick_author += pick.creation_info.agency_id+" "
+        if pick.creation_info.author is not None:
+            pick_author += pick.creation_info.author+ " "
+        pick_author = pick_author.strip()
+        if pick_author in author_colors:
+            color = author_colors[pick_author]
+    return color
+
 pickax = None
 debug = False
 
@@ -92,7 +117,7 @@ def dosave(qmlevent, stream, command, pickax):
         out_cat = obspy.Catalog([qmlevent])
         quake_time_str=qmlevent.preferred_origin().time.strftime("%d.%m.%y_h%Hm%Ms%S.qml")
         out_cat.write(f"event_{quake_time_str}.qml", format='QUAKEML')
-        all_pick_lines = pickax.display_picks(author=pickax.creation_info.author)
+        all_pick_lines = pickax.display_picks(author=pickax.config.creation_info.author)
         if len(all_pick_lines) > 0:
             pickfilename=qmlevent.preferred_origin().time.strftime("picks_%d.%m.%y_h%Hm%Ms%S.txt")
             with open(pickfilename, "a", encoding="utf-8") as outtxt:
@@ -150,12 +175,13 @@ seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, start_offset 
 # cache make prev/next a bit faster if data is already here
 seis_itr = CacheSeismogramIterator(seis_itr)
 
+# Configure the tool
+pickax_config = PickAxConfig()
+pickax_config.creation_info = creation_info
+pickax_config.finishFn=dosave
+pickax_config.filters = filters
+pickax_config.flagcolorFn = flagcolorFn
+
+
 # start digging!
-pickax = PickAx(finishFn=dosave,
-                inventory=sta_itr.inv,
-                creation_info = creation_info,
-                filters = filters, # allows toggling between fitlers
-                phase_list = phase_list,
-                figsize=(10,8),
-                debug=True,
-                )
+pickax = PickAx(inventory=sta_itr.inv, config=pickax_config )
