@@ -26,7 +26,7 @@ def createStandardConfig(author="Jane Smith"):
     pickax_config = PickAxConfig()
     pickax_config.creation_info = CreationInfo(author=author, version="0.0.1")
     pickax_config.author_colors = {
-        author: "lime",
+        author: "red",
         "Freddie Freeloader": "purple",
         "Minnie the Mooch": "seagreen",
     }
