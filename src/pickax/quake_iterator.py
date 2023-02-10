@@ -52,7 +52,6 @@ class FDSNQuakeIterator(QuakeIterator):
     @property
     def client(self):
         if self._client is None:
-            print(f"init client: {self.dc_name}")
             self._client = Client(self.dc_name, _discover_services=False, debug=self.debug)
         return self._client
     def next_batch(self):
@@ -83,7 +82,6 @@ class FDSNQuakeIterator(QuakeIterator):
             return None
         quake = self.quakes[self.batch_idx]
         if self.dc_name == "USGS":
-            print(f"Attempt to reload with picks {extractEventId(quake)}")
             quake = reloadQuakeMLWithPicks(quake, client=self.client, debug=self.debug)
             self.quakes[self.batch_idx] = quake
         return quake

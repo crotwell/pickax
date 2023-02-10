@@ -11,19 +11,15 @@ from pickax import (
     extractEventId,
     )
 from obspy import Catalog
+from sc_quakes_std_config import createStandardConfig
+from sc_quakes_std_dosave import create_dosaveFn
 
 # author info for picks, your name here...
 me = "Jane Smith"
-creation_info = CreationInfo(author=me, version="0.0.1")
-author_colors = {
-    me: "lime",
-    "Freddie Freeloader": "purple",
-    "Minnie the Mooch": "seagreen",
-}
 all_picks_qml_file = "picks_sc_quakes.qml"
 
-# show prediceted travel times for these phases
-phase_list = ['P', 'S', 'p', 's']
+pickax_config = createStandardConfig(author=me)
+pickax_config.creation_info.version="0.0.1"
 
 # parameters for selecting earthquakes, server defaults to USGS
 quake_query_params = {
@@ -56,132 +52,12 @@ seis_params = {
     "end_offset": 120,
 }
 
-# helper function, perhaps to preprocess the stream before picking
-def preprocess(stream, inv):
-    if "preprocessed" not in stream[0].stats:
-        stream.detrend()
-        # deconvolution prefiltering, 10 sec to 45 Hz
-        pre_filt = [0.02, 0.1, 45, 50]
-        for tr in stream:
-            tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
-            tr.stats["preprocessed"] = True
-
-# create a few filters, will be able to toggle between them with the 'f' key
-def bpfilter(original_stream, current_stream, prevFilter, idx):
-    return original_stream.filter('bandpass', freqmin=1, freqmax=10.0, corners=1, zerophase=True)
-
-def hpfilter(original_stream, current_stream, prevFilter, idx):
-    return original_stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
-
-filters = [
-    { "name": "bandpass 1 10", "fn": bpfilter},
-    { "name": "highpass 1", "fn": hpfilter},
-]
-
-def flagcolorFn(pick, arrival):
-    color = None # none means use built in defaults, red and blue
-    if pick is None and arrival is None:
-        color = None
-    elif arrival is not None:
-        # usually means pick used in official location
-        color = "blue"
-    else:
-        pick_author = ""
-        if pick.creation_info.agency_id is not None:
-            pick_author += pick.creation_info.agency_id+" "
-        if pick.creation_info.author is not None:
-            pick_author += pick.creation_info.author+ " "
-        pick_author = pick_author.strip()
-        if pick_author in author_colors:
-            color = author_colors[pick_author]
-    return color
-
-pickax = None
-debug = False
-
-# function called on quit, next or prev, allows saving of picks however you wish
-# here we save the quake as QuakeML, which will include the picks, and then
-# load the next seismogram if possible
-def dosave(qmlevent, stream, command, pickax):
-    global seis_itr, sta_itr, quake_itr
-    # first time through qmlevent will be None and stream will be empty
-    if qmlevent is not None and len(stream) != 0:
-        # update all_picks_qml_file
-        saved_catalog = Catalog()
-        if os.path.exists(f'{all_picks_qml_file}'):
-            saved_catalog = obspy.read_events(all_picks_qml_file)
-        merge_picks_to_catalog(qmlevent, saved_catalog)
-        saved_catalog.write(all_picks_qml_file, format='QUAKEML')
-
-        station_code = stream[0].stats.station
-        out_cat = obspy.Catalog([qmlevent])
-        quake_time_str=qmlevent.preferred_origin().time.strftime("%d.%m.%y_h%Hm%Ms%S.qml")
-        out_cat.write(f"event_{quake_time_str}.qml", format='QUAKEML')
-        all_pick_lines = pickax.display_picks(author=pickax.config.creation_info.author)
-        if len(all_pick_lines) > 0:
-            pickfilename=qmlevent.preferred_origin().time.strftime("picks_%d.%m.%y_h%Hm%Ms%S.txt")
-            with open(pickfilename, "a", encoding="utf-8") as outtxt:
-                for line in all_pick_lines:
-                    outtxt.write(line)
-    seis = [] # force while to run
-    sta = "dummy"
-    quake = "dummy"
-    if command == "next":
-        net, sta, quake, seis = seis_itr.next()
-        while len(seis) == 0 and sta is not None and quake is not None:
-            print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
-            net, sta, quake, seis = seis_itr.next()
-    elif command == "prev":
-        net, sta, quake, seis = seis_itr.prev()
-        while len(seis) == 0 and sta is not None and quake is not None:
-            print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
-            net, sta, quake, seis = seis_itr.prev()
-    else:
-        # quit
-        return
-
-    if len(seis) == 0:
-        print(f"No more to do...")
-        pickax.close()
-    elif sta is not None and quake is not None:
-        # check to see if any old saved quakes from same event
-        saved_catalog = Catalog()
-        if os.path.exists(f'{all_picks_qml_file}'):
-            saved_catalog = obspy.read_events(all_picks_qml_file)
-        id = extractEventId(quake)
-        for oldquake in saved_catalog:
-            if extractEventId(oldquake) == id:
-                merge_picks_to_quake(oldquake, quake, author=creation_info.author)
-
-        all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
-        print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
-        preprocess(seis, sta_itr.inv)
-        # could update both stream and Qml Event
-        # pickax.update_data(st, catalog[0])
-        # or just the stream if the event is the same
-        pickax.update_data(seis, quake)
-    else:
-        print(f"close as {sta is None} {quake is None}")
-        pickax.close()
-
-# Load stations, events and seismograms
-sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
-quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
-print(f"Number of quakes: {len(quake_itr.quakes)}")
-
-# use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
-# at each station that has both
-seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, start_offset = -30, end_offset=120, debug=debug, timeout=15))
-# cache make prev/next a bit faster if data is already here
-seis_itr = CacheSeismogramIterator(seis_itr)
-
-# Configure the tool
-pickax_config = PickAxConfig()
-pickax_config.creation_info = creation_info
-pickax_config.finishFn=dosave
-pickax_config.filters = filters
-pickax_config.flagcolorFn = flagcolorFn
+pickax_config.finishFn=create_dosaveFn(quake_query_params,
+                                       sta_query_params,
+                                       seis_params,
+                                       pickax_config,
+                                       picks_file=all_picks_qml_file)
 
 
 # start digging!
-pickax = PickAx(inventory=sta_itr.inv, config=pickax_config )
+pickax = PickAx(config=pickax_config )

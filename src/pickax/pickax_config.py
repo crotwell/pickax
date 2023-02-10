@@ -40,6 +40,7 @@ class PickAxConfig:
         self.debug = False
         self.scroll_factor = 8
         self.flagcolorFn = None
+        self.author_colors = {}
         self.titleFn = default_titleFn
         self.finishFn = None
         self.creation_info = None
@@ -48,10 +49,9 @@ class PickAxConfig:
         self._model =  None
         self.figsize=(10,8)
         self.creation_info = CreationInfo(author=os.getlogin())
-        print(f"keymap: {self._keymap}")
         for k,v in DEFAULT_KEYMAP.items():
-            print(f"{k} -> {v}")
             self._keymap[k] = v
+        self.flagcolorFn = lambda p,a: defaultColorFn(p, a, self.author_colors)
 
     @property
     def keymap(self):
@@ -81,3 +81,21 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
         mag = qmlevent.preferred_magnitude()
         mag_str = f"{mag.mag} {mag.magnitude_type}"
     return f"{origin_str} {mag_str}"
+
+def defaultColorFn(pick, arrival, author_colors):
+    color = None # none means use built in defaults, red and blue
+    if pick is None and arrival is None:
+        color = None
+    elif arrival is not None:
+        # usually means pick used in official location
+        color = "blue"
+    else:
+        pick_author = ""
+        if pick.creation_info.agency_id is not None:
+            pick_author += pick.creation_info.agency_id+" "
+        if pick.creation_info.author is not None:
+            pick_author += pick.creation_info.author+ " "
+        pick_author = pick_author.strip()
+        if pick_author in author_colors:
+            color = author_colors[pick_author]
+    return color

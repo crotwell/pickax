@@ -209,7 +209,6 @@ class PickAx:
         elif self.config.keymap[event.key]  == "DISPLAY_ALL_PICKS":
             print(self.display_picks(include_station=True))
         elif self.config.keymap[event.key]  == "NEXT_FILTER":
-            print(f"next filter: {self.curr_filter}")
             if self.curr_filter == len(self.config.filters)-1:
                 self.curr_filter = -2
             for sg in self.seismographList:
@@ -222,7 +221,6 @@ class PickAx:
             for sg in self.seismographList:
                 sg.do_filter(self.curr_filter-1)
             self.curr_filter -= 1
-            print(self.curr_filter)
             self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key]  == "HELP":
             print_help(self.config.keymap)
