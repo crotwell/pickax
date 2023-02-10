@@ -98,7 +98,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
     def __load_seismograms__(self, net, sta, quake, query_params={}):
         if len(sta.channels) == 0:
             return []
-        client = Client(self.dc_name, debug=self.debug, timeout=self.timeout)
+        client = Client(self.dc_name, _discover_services=False, debug=self.debug, timeout=self.timeout)
         origin = quake.preferred_origin()
         if origin is None:
             return self.__empty__

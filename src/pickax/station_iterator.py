@@ -32,7 +32,7 @@ class FDSNStationIterator(StationIterator):
 
     def __load__(self):
         try:
-            client = Client(self.dc_name, debug=self.debug)
+            client = Client(self.dc_name, _discover_services=False, debug=self.debug)
             return client.get_stations(**self.query_params)
         except FDSNNoDataException:
             return Inventory()

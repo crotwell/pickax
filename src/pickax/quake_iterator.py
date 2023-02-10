@@ -41,6 +41,7 @@ class FDSNQuakeIterator(QuakeIterator):
     def __init__(self, query_params, days_step=30, dc_name="USGS", debug=False):
         self.debug = debug
         self.dc_name = dc_name
+        self._client = None
         self.query_params = dict(query_params)
         if 'orderby' not in self.query_params:
             self.query_params['orderby'] = 'time-asc'
@@ -48,22 +49,26 @@ class FDSNQuakeIterator(QuakeIterator):
         self.__curr_end = UTCDateTime(query_params["start"]) if query_params["start"] else UTCDateTime()
         self.quakes = self.next_batch()
         self.batch_idx = -1
+    @property
+    def client(self):
+        if self._client is None:
+            print(f"init client: {self.dc_name}")
+            self._client = Client(self.dc_name, _discover_services=False, debug=self.debug)
+        return self._client
     def next_batch(self):
         try:
-            client = Client(self.dc_name, debug=self.debug)
-            return client.get_events(**self.query_params)
+            return self.client.get_events(**self.query_params)
         except FDSNNoDataException:
             # return empty catalog instaed of exception
             return Catalog([])
     def next_batch_step(self):
-        client = Client(self.dc_name, debug=self.debug)
         t1 = self.__curr_end
         t2 = t1 + self.days_step*86400
         step_query_params = dict(self.query_params)
         step_query_params['start'] = t1
         step_query_params['end'] = t2
         try:
-            self.quakes = client.get_events(**step_query_params)
+            self.quakes = self.client.get_events(**step_query_params)
         except FDSNNoDataException:
             # return empty catalog instaed of exception
             self.quakes =  Catalog([])
@@ -79,7 +84,7 @@ class FDSNQuakeIterator(QuakeIterator):
         quake = self.quakes[self.batch_idx]
         if self.dc_name == "USGS":
             print(f"Attempt to reload with picks {extractEventId(quake)}")
-            quake = reloadQuakeMLWithPicks(quake, host=self.dc_name, debug=self.debug)
+            quake = reloadQuakeMLWithPicks(quake, client=self.client, debug=self.debug)
             self.quakes[self.batch_idx] = quake
         return quake
     def prev(self):
