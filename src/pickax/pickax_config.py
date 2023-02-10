@@ -83,6 +83,8 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
     return f"{origin_str} {mag_str}"
 
 def defaultColorFn(pick, arrival, author_colors):
+    # big list of color names here:
+    # https://matplotlib.org/stable/gallery/color/named_colors.html
     color = None # none means use built in defaults, red and blue
     if pick is None and arrival is None:
         color = None
