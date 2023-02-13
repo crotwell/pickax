@@ -52,10 +52,10 @@ seis_params = {
     "end_offset": 120,
 }
 
-pickax_config.finishFn=create_dosaveFn(quake_query_params,
-                                       sta_query_params,
-                                       seis_params,
-                                       pickax_config,
+pickax_config.finishFn=create_dosaveFn(quake_query_params=quake_query_params,
+                                       station_query_params=sta_query_params,
+                                       seis_params=seis_params,
+                                       config=pickax_config,
                                        picks_file=all_picks_qml_file)
 
 

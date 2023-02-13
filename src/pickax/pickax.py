@@ -110,15 +110,13 @@ class PickAx:
         for trList in self.display_groups:
             ax = self.fig.add_subplot(len(self.display_groups),1,position)
             position += 1
-            sg = Seismograph(ax, trList,
+            sg = Seismograph(ax,
+                            stream=trList,
+                            config = self.config,
                             qmlevent = self.qmlevent,
                             inventory = self.inventory,
-                            creation_info = self.config.creation_info,
-                            filters = self.config.filters,
-                            keymap = self.config.keymap,
                             traveltime_calc = self.taveltime_calc,
                             )
-            sg.flagcolorFn = self.config.flagcolorFn
             sg.draw()
             self.seismographList.append(sg)
         self.fig.tight_layout()

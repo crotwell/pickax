@@ -14,35 +14,28 @@ class Seismograph:
     Single display for seismograms. If there are more than one seismogram, they
     are displayed overlain.
 
+    ax -- matplotlib ax for display
     stream -- usually a waveform for a single channel
+    config -- pickax_config for configuration of display
     qmlevent -- optional QuakeML Event to store picks in, created if not supplied
-    creation_info -- default creation info for the pick, primarily for author or agency_id
-    filters -- list of filters, f cycles through these redrawing the waveform
-    keymap -- optional dictionary of key to function
+    traveltime_calc -- option predicted travel time calculator
     """
     def __init__(self,
                  ax,
                  stream,
+                 config,
                  qmlevent=None,
                  inventory=None,
-                 creation_info=None,
-                 filters = [],
                  traveltime_calc = None,
-                 keymap = {}, ):
+                ):
         self._trace_artists = []
         self._flag_artists = []
         self._zoom_bounds = []
         self.ax = ax
-        self.creation_info = creation_info
-        self.filters = filters
+        self.config = config
         self.inventory = inventory
         self.traveltime_calc = traveltime_calc
-        self.flagcolorFn = None
         self._init_data_(stream, qmlevent)
-        if creation_info is None and os.getlogin() is not None:
-            self.creation_info = obspy.core.event.base.CreationInfo(
-                author=os.getlogin()
-                )
         self._prev_zoom_time = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
@@ -120,13 +113,21 @@ class Seismograph:
         Draws flag for a pick.
         """
 
-        color = self.color_for_flag(pick, arrival)
+        color = None
+        label_str = None
+        if self.config.pick_color_labelFn is not None:
+            color, label_str = self.config.pick_color_labelFn(pick, arrival)
 
-        label_str = "pick"
-        if arrival is not None:
+        if color is None:
+            color = "red"
+            if arrival is not None:
+                color = "blue"
+
+        if label_str is None and arrival is not None:
             label_str = arrival.phase
-        elif pick.phase_hint is not None:
+        elif label_str is None and pick.phase_hint is not None:
             label_str = pick.phase_hint
+
         self.draw_flag(pick.time, label_str, color=color)
     def draw_predicted_flags(self):
         if self.traveltime_calc is not None \
@@ -156,13 +157,14 @@ class Seismograph:
                                                                station_code=self.stream[0].stats.station,
                                                                location_code=self.stream[0].stats.location,
                                                                channel_code=self.stream[0].stats.channel)
-        if self.creation_info is not None:
+        if self.config.creation_info is not None:
             p.creation_info = obspy.core.event.base.CreationInfo(
-                agency_id=self.creation_info.agency_id,
-                agency_uri=self.creation_info.agency_uri,
-                author=self.creation_info.author,
-                author_uri=self.creation_info.author_uri,
+                agency_id=self.config.creation_info.agency_id,
+                agency_uri=self.config.creation_info.agency_uri,
+                author=self.config.creation_info.author,
+                author_uri=self.config.creation_info.author_uri,
                 creation_time=obspy.UTCDateTime(),
+                version=self.config.creation_info.version
                 )
         self.qmlevent.picks.append(p)
         a = None
@@ -175,7 +177,7 @@ class Seismograph:
                 a.pick_id = p.resource_id
                 a.waveform_id = p.waveform_id
                 if self.curr_filter != -1:
-                    a.filter_id = self.filters[self.curr_filter]['name']
+                    a.filter_id = self.config.filters[self.curr_filter]['name']
                 a.creation_info = p.creation_info
                 self.qmlevent.amplitudes.append(a)
                 break
@@ -215,21 +217,21 @@ class Seismograph:
         print(f"sq do_filter {idx}")
         self.clear_trace()
         self.clear_flags()
-        if idx < 0 or idx >= len(self.filters):
+        if idx < 0 or idx >= len(self.config.filters):
             self._filtered_stream = self.stream
             self.curr_filter = -1
             self.ax.set_ylabel("")
         else:
-            filterFn = self.filters[idx]['fn']
+            filterFn = self.config.filters[idx]['fn']
             orig_copy = self.stream.copy()
-            out_stream = filterFn(orig_copy, self._filtered_stream, self.filters[idx]['name'], idx )
+            out_stream = filterFn(orig_copy, self._filtered_stream, self.config.filters[idx]['name'], idx )
             if out_stream is not None:
                 # fun returned new stream
                 self._filtered_stream = out_stream
             else:
                 # assume filtering done in place
                 self._filtered_stream = orig_copy
-            self.ax.set_ylabel(self.filters[idx]['name'])
+            self.ax.set_ylabel(self.config.filters[idx]['name'])
             self.curr_filter = idx
 
         self.zoom_amp()
@@ -339,13 +341,3 @@ class Seismograph:
         if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
             return self.qmlevent.preferred_origin().time
         return min([trace.stats.starttime for trace in self.stream])
-
-    def color_for_flag(self, pick, arrival=None):
-        color = None
-        if self.flagcolorFn is not None:
-            color = self.flagcolorFn(pick, arrival)
-        if color is None:
-            color = "red"
-            if arrival is not None:
-                color = "blue"
-        return color

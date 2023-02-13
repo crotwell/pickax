@@ -14,9 +14,11 @@ from obspy import Catalog, read_events
 
 debug = False
 
-def create_dosaveFn(quake_query_params, sta_query_params, seis_params, pickax_config, picks_file="picks_sc_quakes.qml"):
+def create_dosaveFn(quake_query_params, station_query_params, seis_params, config=None, picks_file="picks_sc_quakes.qml"):
+    if config is None:
+        config = PickAxConfig()
     # Load stations, events and seismograms
-    sta_itr = FDSNStationIterator(sta_query_params, debug=debug)
+    sta_itr = FDSNStationIterator(station_query_params, debug=debug)
     quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
     print(f"Number of quakes: {len(quake_itr.quakes)}")
 
@@ -80,7 +82,7 @@ def create_dosaveFn(quake_query_params, sta_query_params, seis_params, pickax_co
             id = extractEventId(quake)
             for oldquake in saved_catalog:
                 if extractEventId(oldquake) == id:
-                    merge_picks_to_quake(oldquake, quake, author=pickax_config.creation_info.author)
+                    merge_picks_to_quake(oldquake, quake, author=config.creation_info.author)
 
             all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
             print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")

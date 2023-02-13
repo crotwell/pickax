@@ -17,9 +17,12 @@ def pick_to_string(p, qmlevent=None, start=None):
     if p.creation_info.author is not None:
         author += p.creation_info.author+ " "
     author = author.strip()
+    ver = ""
+    if p.creation_info.version is not None:
+        ver = f" ({p.creation_info.version})"
     offsetStr = f"({p.time-start} s)" if start is not None else ""
     sourceId = f"{p.waveform_id.network_code}.{p.waveform_id.station_code}.{p.waveform_id.location_code}.{p.waveform_id.channel_code}"
-    return f"{pname} {p.time} {sourceId} {offsetStr} {amp_str} {author}{isArr}"
+    return f"{pname} {p.time} {sourceId} {offsetStr} {amp_str} {author}{ver}{isArr}"
 
 def arrival_for_pick(pick, qmlevent):
     """

@@ -39,7 +39,6 @@ class PickAxConfig:
         self._keymap = {}
         self.debug = False
         self.scroll_factor = 8
-        self.flagcolorFn = None
         self.author_colors = {}
         self.titleFn = default_titleFn
         self.finishFn = None
@@ -51,7 +50,7 @@ class PickAxConfig:
         self.creation_info = CreationInfo(author=os.getlogin())
         for k,v in DEFAULT_KEYMAP.items():
             self._keymap[k] = v
-        self.flagcolorFn = lambda p,a: defaultColorFn(p, a, self.author_colors)
+        self.pick_color_labelFn = lambda p,a: defaultColorFn(p, a, self.author_colors)
 
     @property
     def keymap(self):
@@ -100,4 +99,10 @@ def defaultColorFn(pick, arrival, author_colors):
         pick_author = pick_author.strip()
         if pick_author in author_colors:
             color = author_colors[pick_author]
-    return color
+    label_str = None
+
+    if label_str is None and arrival is not None:
+        label_str = arrival.phase
+    elif label_str is None and pick.phase_hint is not None:
+        label_str = pick.phase_hint
+    return color, label_str

@@ -20,7 +20,7 @@ def bpfilter(original_stream, current_stream, prevFilter, idx):
 def hpfilter(original_stream, current_stream, prevFilter, idx):
     return original_stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
-def createStandardConfig(author="Jane Smith"):
+def createStandardConfig(author=None):
 
     # Configure the tool
     pickax_config = PickAxConfig()
@@ -32,6 +32,16 @@ def createStandardConfig(author="Jane Smith"):
         "Freddie Freeloader": "purple",
         "Minnie the Mooch": "seagreen",
     }
+
+    # save default color-label function for picks
+    default_pick_color_label_fn = pickax_config.pick_color_labelFn
+    # create new color label function that uses existing, but appends version
+    def pick_versionFn(pick, arrival):
+        color, label = default_pick_color_label_fn(pick, arrival)
+        ver = pick.creation_info.version if pick.creation_info.version is not None else ""
+        label = f"{label} {ver}"
+        return color, label
+    pickax_config.pick_color_labelFn = pick_versionFn
 
     # show prediceted travel times for these phases
     pickax_config.phase_list = ['P', 'S', 'p', 's']
