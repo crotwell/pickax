@@ -18,7 +18,9 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     if config is None:
         config = PickAxConfig()
     # Load stations, events and seismograms
+    print(f"Load station metadata...")
     sta_itr = FDSNStationIterator(station_query_params, debug=debug)
+    print(f"Load earthquakes...")
     quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
     print(f"Number of quakes: {len(quake_itr.quakes)}")
 
@@ -43,6 +45,9 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     # load the next seismogram if possible
     def dosave(qmlevent, stream, command, pickax):
         saved_catalog = None
+        # set overall inventory if not already set
+        if pickax.inventory is None:
+            pickax.inventory = sta_itr.inv
         # first time through qmlevent will be None and stream will be empty
         if qmlevent is not None and len(stream) != 0:
             # save new picks to picks_file
