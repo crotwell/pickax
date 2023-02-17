@@ -28,9 +28,11 @@ def createStandardConfig(author=None):
     # big list of color names at:
     # https://matplotlib.org/stable/gallery/color/named_colors.html
     pickax_config.author_colors = {
-        author: "red",
-        "Freddie Freeloader": "purple",
-        "Minnie the Mooch": "seagreen",
+        "Dan Frost": "lime",
+        "Chase Robinson": "seagreen",
+        "Ashley Ford": "rebeccapurple",
+        "Logan Zollinger": "maroon",
+        "Philip Crotwell": "tomato",
     }
 
     # save default color-label function for picks
@@ -41,6 +43,14 @@ def createStandardConfig(author=None):
         ver = pick.creation_info.version if pick.creation_info.version is not None else ""
         label = f"{label} {ver}"
         return color, label
+    # create new color label function that uses existing, but appends author
+    def pick_versionFn(pick, arrival):
+        color, label = default_pick_color_label_fn(pick, arrival)
+        author = pick.creation_info.author if pick.creation_info.author is not None else ""
+        label = f"{label} {author}"
+        return color, label
+
+
     pickax_config.pick_color_labelFn = pick_versionFn
 
     # show prediceted travel times for these phases
