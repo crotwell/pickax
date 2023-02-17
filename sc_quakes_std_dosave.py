@@ -9,6 +9,7 @@ from pickax import (
     merge_picks_to_catalog,
     merge_picks_to_quake,
     extractEventId,
+    QuakeMLFileIterator,
     )
 from obspy import Catalog, read_events
 
@@ -21,7 +22,10 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     print(f"Load station metadata...")
     sta_itr = FDSNStationIterator(station_query_params, debug=debug)
     print(f"Load earthquakes...")
+    # this loads quakes from remote server
     quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
+    # this loads from local file
+    #quake_itr = QuakeMLFileIterator(picks_file)
     print(f"Number of quakes: {len(quake_itr.quakes)}")
 
     # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion

@@ -33,6 +33,7 @@ def createStandardConfig(author=None):
         "Ashley Ford": "rebeccapurple",
         "Logan Zollinger": "maroon",
         "Philip Crotwell": "tomato",
+        "SE": "orchid",
     }
 
     # save default color-label function for picks
@@ -44,14 +45,18 @@ def createStandardConfig(author=None):
         label = f"{label} {ver}"
         return color, label
     # create new color label function that uses existing, but appends author
-    def pick_versionFn(pick, arrival):
+    def pick_authorFn(pick, arrival):
+        print(f"sc pick_authorFn  has arr: {arrival is not None}")
         color, label = default_pick_color_label_fn(pick, arrival)
+        print(f"default label: {label}  has Arrival: {arrival is not None}")
         author = pick.creation_info.author if pick.creation_info.author is not None else ""
-        label = f"{label} {author}"
+        agency = pick.creation_info.agency_id if pick.creation_info.agency_id is not None else ""
+        label = f"{label} {author}{agency}"
+        print(f"mod label: {label}")
         return color, label
 
 
-    pickax_config.pick_color_labelFn = pick_versionFn
+    pickax_config.pick_color_labelFn = pick_authorFn
 
     # show prediceted travel times for these phases
     pickax_config.phase_list = ['P', 'S', 'p', 's']
