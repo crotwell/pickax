@@ -4,6 +4,7 @@ keymap_desc = {
     'PICK_GENERIC': "Create a generic pick at the current mouse location",
     'PICK_P': "Create a P pick at the current mouse location",
     'PICK_S': "Create a S pick at the current mouse location",
+    'REMOVE_PICK': "Delete pick at the current mouse location",
     'DISPLAY_PICKS': "Display your picks",
     'DISPLAY_ALL_PICKS': "Display all picks",
     'NEXT_FILTER': "Apply next filter",

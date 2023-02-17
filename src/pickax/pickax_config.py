@@ -9,6 +9,7 @@ DEFAULT_KEYMAP = {
     'c': "PICK_GENERIC",
     'a': "PICK_P",
     's': "PICK_S",
+    'backspace': "REMOVE_PICK",
     'd': "DISPLAY_PICKS",
     'D': "DISPLAY_ALL_PICKS",
     'f': "NEXT_FILTER",
@@ -23,7 +24,6 @@ DEFAULT_KEYMAP = {
     'r': "GO_PREV",
     'q': "GO_QUIT",
     'h': "HELP",
-    "backspace": "backspace",
 }
 
 
@@ -83,7 +83,7 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
     return f"{origin_str} {mag_str}"
 
 def defaultColorFn(pick, arrival, author_colors):
-    pick_author = ""    
+    pick_author = ""
     if pick.creation_info.author is not None:
         pick_author = pick.creation_info.author
     elif pick.creation_info.agency_id is not None:

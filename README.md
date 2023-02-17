@@ -39,6 +39,7 @@ pickax -s JKYD.mseed
 - c: Create a generic pick at the current mouse location
 - a: Create a P pick at the current mouse location
 - s: Create a S pick at the current mouse location
+- backspace: Delete pick at the current mouse location
 - d: Display your picks
 - D: Display all picks
 - f: Apply next filter
