@@ -1,4 +1,11 @@
-
+from .pick_util import (
+    pick_to_string,
+    pick_from_trace,
+    arrival_for_pick,
+    amplitude_for_pick,
+    pick_to_multiline,
+    remove_pick
+    )
 
 class PickFlag:
     def __init__(self, pick, seismograph, arrival=None, is_modifiable=False):
@@ -10,7 +17,9 @@ class PickFlag:
         self.line_artist = None
         self.label_artist = None
         self.color_labelFn = None
+        self.canvas = None
     def mouse_event_connect(self, canvas):
+        self.canvas = canvas
         if self.is_modifiable:
             self.cidpress = canvas.mpl_connect(
                 'button_press_event', self.on_press)
@@ -18,6 +27,7 @@ class PickFlag:
                 'button_release_event', self.on_release)
             self.cidmotion = canvas.mpl_connect(
                 'motion_notify_event', self.on_motion)
+            self.cidkeypress = canvas.mpl_connect('key_press_event', self.on_key)
     def event_on_flag(self, event):
         if self.line_artist is None or self.label_artist is None:
             return
@@ -26,6 +36,18 @@ class PickFlag:
         line_contains, line_attrd = self.line_artist.contains(event)
         label_contains, label_attrd = self.label_artist.contains(event)
         return line_contains or label_contains
+    def on_key(self, event):
+        if event.key == "backspace":
+            if not self.is_modifiable:
+                print("Unable to remove, pick is not modifiable")
+            if self.event_on_flag(event):
+                if self.seismograph.qmlevent is not None:
+                    remove_pick(self.pick, self.seismograph.qmlevent)
+                if self.line_artist is not None:
+                    self.line_artist.remove()
+                if self.label_artist is not None:
+                    self.label_artist.remove()
+                self.canvas.draw_idle()
     def on_press(self, event):
         if not self.event_on_flag(event):
             return
@@ -47,7 +69,6 @@ class PickFlag:
         self.draw()
         event.canvas.draw_idle()
     def draw(self):
-
         if self.line_artist is not None:
             self.line_artist.remove()
         if self.label_artist is not None:

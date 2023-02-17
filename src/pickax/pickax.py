@@ -128,7 +128,8 @@ class PickAx:
                             )
             for pick in sg.channel_picks():
                 is_mod = pick.creation_info.author == self.config.creation_info.author
-                pickFlag = self.create_pick_flag(pick, sg, is_mod)
+                arrival = arrival_for_pick(pick, self.qmlevent)
+                pickFlag = self.create_pick_flag(pick, sg, is_modifiable=is_mod, arrival=arrival)
             sg.draw()
             self.seismographList.append(sg)
         self.fig.tight_layout()
@@ -251,8 +252,8 @@ class PickAx:
         if author is not None:
             pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
         return pick_list
-    def create_pick_flag(self, pick, seismograph, is_modifiable):
-        pickFlag = PickFlag(pick, seismograph, is_modifiable=is_modifiable)
+    def create_pick_flag(self, pick, seismograph, is_modifiable, arrival=None):
+        pickFlag = PickFlag(pick, seismograph, is_modifiable=is_modifiable, arrival=arrival)
         pickFlag.color_labelFn = self.config.pick_color_labelFn
         pickFlag.mouse_event_connect(self.fig.canvas)
         seismograph.flags.append(pickFlag)
@@ -260,7 +261,7 @@ class PickAx:
     def do_pick(self, event, phase="pick"):
         sg = self.seismograph_for_axes(event.inaxes)
         pick = sg.do_pick(event, phase)
-        pickFlag = self.create_pick_flag(pick, sg, True)
+        pickFlag = self.create_pick_flag(pick, sg, is_modifiable=True)
         pickFlag.draw()
         return pick
     def seismograph_for_axes(self, ax):

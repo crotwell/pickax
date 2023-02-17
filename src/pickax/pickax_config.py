@@ -23,6 +23,7 @@ DEFAULT_KEYMAP = {
     'r': "GO_PREV",
     'q': "GO_QUIT",
     'h': "HELP",
+    "backspace": "backspace",
 }
 
 
@@ -82,8 +83,16 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
     return f"{origin_str} {mag_str}"
 
 def defaultColorFn(pick, arrival, author_colors):
+    pick_author = ""    
+    if pick.creation_info.author is not None:
+        pick_author = pick.creation_info.author
+    elif pick.creation_info.agency_id is not None:
+        pick_author = pick.creation_info.agency_id
+    pick_author = pick_author.strip()
+
     # big list of color names here:
     # https://matplotlib.org/stable/gallery/color/named_colors.html
+
     color = None # none means use built in defaults, red and blue
     if pick is None and arrival is None:
         color = None
@@ -91,18 +100,14 @@ def defaultColorFn(pick, arrival, author_colors):
         # usually means pick used in official location
         color = "blue"
     else:
-        pick_author = ""
-        if pick.creation_info.agency_id is not None:
-            pick_author += pick.creation_info.agency_id+" "
-        if pick.creation_info.author is not None:
-            pick_author += pick.creation_info.author+ " "
-        pick_author = pick_author.strip()
         if pick_author in author_colors:
             color = author_colors[pick_author]
     label_str = None
 
-    if label_str is None and arrival is not None:
+    if arrival is not None:
         label_str = arrival.phase
-    elif label_str is None and pick.phase_hint is not None:
+    if label_str is None and pick.phase_hint is not None:
         label_str = pick.phase_hint
+    if label_str is None:
+        label_str = "unknown phase"
     return color, label_str

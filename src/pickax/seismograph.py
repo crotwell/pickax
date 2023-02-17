@@ -117,27 +117,6 @@ class Seismograph:
         if self.qmlevent is not None and self.qmlevent.preferred_origin() is not None:
             self.draw_flag(self.qmlevent.preferred_origin().time, "origin", color="green")
 
-    def draw_pick_flag(self, pick, arrival=None):
-        """
-        Draws flag for a pick.
-        """
-
-        color = None
-        label_str = None
-        if self.config.pick_color_labelFn is not None:
-            color, label_str = self.config.pick_color_labelFn(pick, arrival)
-
-        if color is None:
-            color = "red"
-            if arrival is not None:
-                color = "blue"
-
-        if label_str is None and arrival is not None:
-            label_str = arrival.phase
-        elif label_str is None and pick.phase_hint is not None:
-            label_str = pick.phase_hint
-
-        self.draw_flag(pick.time, label_str, color=color)
     def draw_predicted_flags(self):
         if self.traveltime_calc is not None \
                  and self.qmlevent is not None \
@@ -170,7 +149,6 @@ class Seismograph:
 
         self.qmlevent.picks.append(pick)
         self.qmlevent.amplitudes.append(amp)
-        #self.draw_pick_flag(pick)
         return pick
     def clear_trace(self):
         """
@@ -200,6 +178,7 @@ class Seismograph:
         label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
         self._flag_artists.append(ln)
         self._flag_artists.append(label)
+        return ln, label
     def do_filter(self, idx):
         """
         Applies the idx-th filter to the waveform and redraws.
