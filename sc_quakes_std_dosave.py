@@ -87,7 +87,7 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
             id = extractEventId(quake)
             for oldquake in saved_catalog:
                 if extractEventId(oldquake) == id:
-                    merge_picks_to_quake(oldquake, quake, author=config.creation_info.author)
+                    merge_picks_to_quake(oldquake, quake)
 
             all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
             print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
