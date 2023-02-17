@@ -35,10 +35,9 @@ def main():
     args = do_parseargs()
     if args.to:
         catalog = None
-        catalog_file = None
+        catalog_file = Path(args.to)
         saved_file = None
-        if os.path.exists(args.to):
-            catalog_file = Path(args.to)
+        if catalog_file.exists():
             catalog = read_events(catalog_file)
         else:
             print(f"File {args.to} does not seem to exist, create empty...")
@@ -48,7 +47,7 @@ def main():
             in_catalog = read_events(Path(qmlfile))
             for in_quake in in_catalog:
                 merge_picks_to_catalog(in_quake, catalog, author=args.author)
-        if catalog_file is not None:
+        if catalog_file.exists():
             saved_file = catalog_file.parent / (args.to+".save")
             os.rename(catalog_file, saved_file)
         catalog.write(catalog_file, format="QUAKEML")
