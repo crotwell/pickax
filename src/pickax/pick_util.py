@@ -1,6 +1,78 @@
 from obspy.clients.fdsn.header import URL_MAPPINGS
 from obspy.clients.fdsn import Client
+from obspy.core.event.origin import Pick
+from obspy.core.event.base import WaveformStreamID, CreationInfo
+from obspy import UTCDateTime
+from obspy.core.event.magnitude import Amplitude
 
+def create_pick_on_stream(stream, time, phase="pick", creation_info=None, filter_name=None):
+    """
+    Creates a pick based on a gui event, like keypress and mouse position.
+    Optionally give the pick a phase name, defaults to "pick".
+    """
+    pick = Pick()
+    pick.method_id = "PickAx"
+    pick.phase_hint = phase
+    pick.time = time
+    pick.waveform_id = WaveformStreamID(network_code=stream[0].stats.network,
+                                        station_code=stream[0].stats.station,
+                                        location_code=stream[0].stats.location,
+                                        channel_code=stream[0].stats.channel)
+    if creation_info is not None:
+        pick.creation_info = CreationInfo(
+            agency_id=creation_info.agency_id,
+            agency_uri=creation_info.agency_uri,
+            author=creation_info.author,
+            author_uri=creation_info.author_uri,
+            creation_time=UTCDateTime(),
+            version=creation_info.version
+            )
+    else:
+        pick.creation_info = CreationInfo(
+            author="PickAx",
+            creation_time=UTCDateTime(),
+            )
+    amp = None
+    for tr in stream:
+        if tr.stats.starttime > time or tr.stats.endtime < time:
+            continue
+        # found trace that overlaps time
+        offset = time - tr.stats.starttime
+        index = round(offset/tr.stats.delta)
+        if index >=0 and index < len(tr):
+            amp = Amplitude()
+            amp.generic_amplitude = tr.data[index]
+            amp.pick_id = pick.resource_id
+            amp.waveform_id = pick.waveform_id
+            if filter_name is not None:
+                filter_name = re.sub(zap_space, '_', filter_name)
+                amp.filter_id = f"quakeml:pickax/filter/{filter_name}"
+            amp.creation_info = pick.creation_info
+            break
+    return pick, amp
+
+def pick_to_multiline(p, qmlevent=None, start=None):
+    a = None
+    amp = None
+    if qmlevent is not None:
+        a = arrival_for_pick(p, qmlevent)
+        amp = amplitude_for_pick(p, qmlevent)
+
+    amp_str = f"amp: {amp.generic_amplitude}" if amp is not None else ""
+    pname = a.phase if a is not None and a.phase is not None else p.phase_hint
+    isArr = ", Pick" if a is None else ", Arrival"
+    author = ""
+    if p.creation_info.agency_id is not None:
+        author += p.creation_info.agency_id+" "
+    if p.creation_info.author is not None:
+        author += p.creation_info.author+ " "
+    author = author.strip()
+    ver = ""
+    if p.creation_info.version is not None:
+        ver = f" ({p.creation_info.version})"
+    offsetStr = f"({p.time-start} s)" if start is not None else ""
+    sourceId = f"{p.waveform_id.network_code}.{p.waveform_id.station_code}.{p.waveform_id.location_code}.{p.waveform_id.channel_code}"
+    return [ pname, str(p.time), sourceId, f"{author}{ver}{isArr}" ]
 def pick_to_string(p, qmlevent=None, start=None):
     a = None
     amp = None
@@ -48,6 +120,15 @@ def amplitude_for_pick( pick, qmlevent):
             return a
     return None
 
+def remove_pick(pick, qmlevent):
+    for o in qmlevent.origins:
+        for a in o.arrivals:
+            if pick.resource_id.id == a.pick_id.id:
+                o.arrivals.remove(a)
+    amp = amplitude_for_pick(pick, qmlevent)
+    if amp is not None:
+        qmlevent.amplitudes.remove(amp)
+    qmlevent.picks.remove(pick)
 def pick_from_trace(pick, trace):
     return (pick.waveform_id.network_code == trace.stats.network and
             pick.waveform_id.station_code == trace.stats.station and

@@ -9,9 +9,18 @@ from IPython import get_ipython
 import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
+from .pickax_config import PickAxConfig
+from .flag import PickFlag
 from .seismograph import Seismograph
 from .traveltime import TravelTimeCalc
-from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
+from .pick_util import (
+    pick_to_string,
+    pick_from_trace,
+    arrival_for_pick,
+    amplitude_for_pick,
+    pick_to_multiline,
+    remove_pick
+    )
 from .help import print_help
 
 class PickAx:
@@ -28,7 +37,7 @@ class PickAx:
                  qmlevent=None,
                  inventory =None,
                  config=None):
-        self.config = config
+        self.config = config if config is not None else PickAxConfig()
         self.stream = stream if stream is not None else Stream()
         self.qmlevent = qmlevent
         self.inventory = inventory
@@ -117,6 +126,9 @@ class PickAx:
                             inventory = self.inventory,
                             traveltime_calc = self.taveltime_calc,
                             )
+            for pick in sg.channel_picks():
+                is_mod = pick.creation_info.author == self.config.creation_info.author
+                pickFlag = self.create_pick_flag(pick, sg, is_mod)
             sg.draw()
             self.seismographList.append(sg)
         self.fig.tight_layout()
@@ -239,9 +251,18 @@ class PickAx:
         if author is not None:
             pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
         return pick_list
-
+    def create_pick_flag(self, pick, seismograph, is_modifiable):
+        pickFlag = PickFlag(pick, seismograph, is_modifiable=is_modifiable)
+        pickFlag.color_labelFn = self.config.pick_color_labelFn
+        pickFlag.mouse_event_connect(self.fig.canvas)
+        seismograph.flags.append(pickFlag)
+        return pickFlag
     def do_pick(self, event, phase="pick"):
-        return self.seismograph_for_axes(event.inaxes).do_pick(event, phase)
+        sg = self.seismograph_for_axes(event.inaxes)
+        pick = sg.do_pick(event, phase)
+        pickFlag = self.create_pick_flag(pick, sg, True)
+        pickFlag.draw()
+        return pick
     def seismograph_for_axes(self, ax):
         for sg in self.seismographList:
             if sg.ax == ax:

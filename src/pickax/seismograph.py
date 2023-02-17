@@ -7,7 +7,12 @@ from obspy import read
 from IPython import get_ipython
 from prompt_toolkit.application.current import get_app
 
-from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
+from .pick_util import (
+    pick_to_string,
+    pick_from_trace,
+    arrival_for_pick,
+    create_pick_on_stream
+    )
 
 # reg exp to find/replace whitespace in ids
 zap_space = re.compile(r'\s+')
@@ -34,6 +39,7 @@ class Seismograph:
         self._trace_artists = []
         self._flag_artists = []
         self._zoom_bounds = []
+        self.flags = []
         self.ax = ax
         self.config = config
         self.inventory = inventory
@@ -84,8 +90,8 @@ class Seismograph:
     def draw_all_flags(self):
         self.clear_flags()
         self.draw_predicted_flags()
-        for pick in self.channel_picks():
-            self.draw_pick_flag(pick, arrival_for_pick(pick, self.qmlevent))
+        for pick_flag in self.flags:
+            pick_flag.draw()
         self.draw_origin_flag()
     def station_picks(self):
         """
@@ -152,41 +158,20 @@ class Seismograph:
         Creates a pick based on a gui event, like keypress and mouse position.
         Optionally give the pick a phase name, defaults to "pick".
         """
-        p = obspy.core.event.origin.Pick()
-        p.method_id = "PickAx"
-        p.phase_hint = phase
-        p.time = self.start + event.xdata
-        p.waveform_id = obspy.core.event.base.WaveformStreamID(network_code=self.stream[0].stats.network,
-                                                               station_code=self.stream[0].stats.station,
-                                                               location_code=self.stream[0].stats.location,
-                                                               channel_code=self.stream[0].stats.channel)
-        if self.config.creation_info is not None:
-            p.creation_info = obspy.core.event.base.CreationInfo(
-                agency_id=self.config.creation_info.agency_id,
-                agency_uri=self.config.creation_info.agency_uri,
-                author=self.config.creation_info.author,
-                author_uri=self.config.creation_info.author_uri,
-                creation_time=obspy.UTCDateTime(),
-                version=self.config.creation_info.version
-                )
-        self.qmlevent.picks.append(p)
-        a = None
-        for tr in self.stream:
-            times = tr.times()
-            index = round(times.searchsorted(event.xdata))
-            if index >=0 and index < len(tr):
-                a = obspy.core.event.magnitude.Amplitude()
-                a.generic_amplitude = tr.data[index]
-                a.pick_id = p.resource_id
-                a.waveform_id = p.waveform_id
-                if self.curr_filter != -1:
-                    filt_name = self.config.filters[self.curr_filter]['name']
-                    filt_name = re.sub(zap_space, '_', filt_name)
-                    a.filter_id = f"quakeml:pickax/filter/{filt_name}"
-                a.creation_info = p.creation_info
-                self.qmlevent.amplitudes.append(a)
-                break
-        self.draw_pick_flag(p)
+        filter_name = None
+        if self.curr_filter != -1:
+            filter_name = self.config.filters[self.curr_filter]['name']
+            filter_name = re.sub(zap_space, '_', filt_name)
+        pick, amp = create_pick_on_stream(self.stream,
+                                       self.start + event.xdata,
+                                       phase,
+                                       creation_info=self.config.creation_info,
+                                       filter_name=filter_name)
+
+        self.qmlevent.picks.append(pick)
+        self.qmlevent.amplitudes.append(amp)
+        #self.draw_pick_flag(pick)
+        return pick
     def clear_trace(self):
         """
         Clears the waveforms from the display.
@@ -259,6 +244,8 @@ class Seismograph:
             calc_max = calc_min
             calc_min = t
         self.ax.set_ylim(calc_min, calc_max)
+        self.refresh_display()
+    def refresh_display(self):
         self.clear_flags()
         self.clear_trace()
         self.draw_stream()
