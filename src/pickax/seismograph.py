@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import obspy
 import numpy
 from obspy import read
@@ -8,6 +9,8 @@ from prompt_toolkit.application.current import get_app
 
 from .pick_util import pick_to_string, pick_from_trace, arrival_for_pick
 
+# reg exp to find/replace whitespace in ids
+zap_space = re.compile(r'\s+')
 
 class Seismograph:
     """
@@ -177,7 +180,9 @@ class Seismograph:
                 a.pick_id = p.resource_id
                 a.waveform_id = p.waveform_id
                 if self.curr_filter != -1:
-                    a.filter_id = self.config.filters[self.curr_filter]['name']
+                    filt_name = self.config.filters[self.curr_filter]['name']
+                    filt_name = re.sub(zap_space, '_', filt_name)
+                    a.filter_id = f"quakeml:pickax/filter/{filt_name}"
                 a.creation_info = p.creation_info
                 self.qmlevent.amplitudes.append(a)
                 break
