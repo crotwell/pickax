@@ -217,7 +217,7 @@ def extractEventId(qmlEvent, host=""):
 
 def reloadQuakeMLWithPicks(qmlevent, client=None, host="USGS", debug=False):
     if client is None:
-        client = Client(host, debug=debug)
+        client = Client(host, _discover_services=False, debug=debug)
     eventid = extractEventId(qmlevent)
     if eventid is not None:
         cat = client.get_events(eventid=eventid)
