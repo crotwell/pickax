@@ -6,6 +6,7 @@ from .pick_util import (
     )
 from .pickax import PickAx
 from .pickax_config import PickAxConfig
+from .areautil import in_area, Point
 from .blit_manager import BlitManager
 from .quake_iterator import (
     QuakeIterator,
@@ -28,6 +29,8 @@ __all__ = [
     PickAx,
     PickAxConfig,
     BlitManager,
+    in_area,
+    Point,
     reloadQuakeMLWithPicks,
     merge_picks_to_catalog,
     merge_picks_to_quake,
