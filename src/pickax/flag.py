@@ -38,15 +38,20 @@ class PickFlag:
         return line_contains or label_contains
     def on_key(self, event):
         if event.key == "backspace":
-            if not self.is_modifiable:
-                print("Unable to remove, pick is not modifiable")
             if self.event_on_flag(event):
+                if not self.is_modifiable:
+                    print("Unable to remove, pick is not modifiable")
+                    return
                 if self.seismograph.qmlevent is not None:
                     remove_pick(self.pick, self.seismograph.qmlevent)
+                if self in self.seismograph.flags:
+                    self.seismograph.flags.remove(self)
                 if self.line_artist is not None:
                     self.line_artist.remove()
+                    self.line_artist = None
                 if self.label_artist is not None:
                     self.label_artist.remove()
+                    self.label_artist = None
                 self.canvas.draw_idle()
     def on_press(self, event):
         if not self.event_on_flag(event):
@@ -70,9 +75,13 @@ class PickFlag:
         event.canvas.draw_idle()
     def draw(self):
         if self.line_artist is not None:
-            self.line_artist.remove()
+            tmp_line_artist = self.line_artist
+            self.line_artist = None
+            tmp_line_artist.remove()
         if self.label_artist is not None:
-            self.label_artist.remove()
+            tmp_label_artist = self.label_artist
+            self.label_artist = None
+            tmp_label_artist.remove()
         start = self.seismograph.start
         ax = self.seismograph.ax
         at_time = self.pick.time - self.seismograph.start

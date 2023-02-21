@@ -235,6 +235,8 @@ class PickAx:
             self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key]  == "HELP":
             print_help(self.config.keymap)
+        elif self.config.keymap[event.key]  ==  "REMOVE_PICK":
+            pass # handled in flag
         else:
             print(f"Oops, key={event.key}")
 
