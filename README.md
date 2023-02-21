@@ -55,6 +55,7 @@ pickax -s JKYD.mseed
 - q: Quit
 - h: Display this help, but you knew that, right?
 
+Picks are draggable with the mouse.
 
 # Configuration
 
