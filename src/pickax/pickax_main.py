@@ -36,6 +36,7 @@ def do_parseargs():
 
 def main():
     print("Hi PickAx!")
+    print("'h' in the display window will show key help.")
     args = do_parseargs()
 
     c = Config()

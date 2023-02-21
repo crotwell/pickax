@@ -25,7 +25,11 @@ def print_help(keymap):
     print(f"Pickax {__version__}")
     print()
     print("Keys:")
+    print(key_help(keymap))
+
+def key_help(keymap):
+    key_str = ""
     for k in keymap:
         desc = keymap_desc[keymap[k]] if keymap[k] in keymap_desc else "Oops, unknown key"
-        print(f"  {k}: {desc}")
-    print()
+        key_str += f"  {k}: {desc}\n"
+    return key_str
