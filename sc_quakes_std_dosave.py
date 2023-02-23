@@ -58,6 +58,15 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
             saved_catalog = Catalog()
             if os.path.exists(f'{picks_file}'):
                 saved_catalog = read_events(picks_file)
+            same_quake = None
+            id = extractEventId(qmlevent)
+            for q in saved_catalog:
+                if extractEventId(q) == id:
+                    same_quake = q
+                    break
+            if same_quake is not None:
+                # quake is also in saved file, replace with current version of event
+                saved_catalog.events.remove(same_quake)
             merge_picks_to_catalog(qmlevent, saved_catalog)
             saved_catalog.write(picks_file, format='QUAKEML')
 
