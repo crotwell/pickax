@@ -174,7 +174,10 @@ def merge_picks_to_catalog(qmlevent, catalog, author=None):
             merge_picks_to_quake(qmlevent, q, author=author)
             break
     if not found_quake:
-        catalog.append(qmlevent)
+        clean_quake = qmlevent.copy()
+        if author is not None:
+            clean_quake.picks = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, clean_quake.picks)
+        catalog.append(clean_quake)
     return catalog
 
 
