@@ -46,13 +46,10 @@ def createStandardConfig(author=None):
         return color, label
     # create new color label function that uses existing, but appends author
     def pick_authorFn(pick, arrival):
-        print(f"sc pick_authorFn  has arr: {arrival is not None}")
         color, label = default_pick_color_label_fn(pick, arrival)
-        print(f"default label: {label}  has Arrival: {arrival is not None}")
         author = pick.creation_info.author if pick.creation_info.author is not None else ""
         agency = pick.creation_info.agency_id if pick.creation_info.agency_id is not None else ""
         label = f"{label} {author}{agency}"
-        print(f"mod label: {label}")
         return color, label
 
 
