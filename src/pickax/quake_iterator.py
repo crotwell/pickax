@@ -21,7 +21,7 @@ class QuakeIterator(ABC):
 class QuakeMLFileIterator(QuakeIterator):
     def __init__(self, file):
         self.quakes = read_events(file)
-        self.batch_idx = 0
+        self.batch_idx = -1
     def next(self):
         self.batch_idx += 1
         if self.batch_idx >= len(self.quakes):
