@@ -47,8 +47,11 @@ def createStandardConfig(author=None):
     # create new color label function that uses existing, but appends author
     def pick_authorFn(pick, arrival):
         color, label = default_pick_color_label_fn(pick, arrival)
-        author = pick.creation_info.author if pick.creation_info.author is not None else ""
-        agency = pick.creation_info.agency_id if pick.creation_info.agency_id is not None else ""
+        author = ""
+        agency = ""
+        if pick.creation_info is not None:
+            author = pick.creation_info.author if pick.creation_info.author is not None else ""
+            agency = pick.creation_info.agency_id if pick.creation_info.agency_id is not None else ""
         label = f"{label} {author}{agency}"
         return color, label
 

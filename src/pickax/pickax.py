@@ -19,7 +19,8 @@ from .pick_util import (
     arrival_for_pick,
     amplitude_for_pick,
     pick_to_multiline,
-    remove_pick
+    remove_pick,
+    same_author
     )
 from .help import print_help
 
@@ -127,7 +128,7 @@ class PickAx:
                             traveltime_calc = self.taveltime_calc,
                             )
             for pick in sg.channel_picks():
-                is_mod = pick.creation_info.author == self.config.creation_info.author
+                is_mod = same_author(pick.creation_info, self.config.creation_info)
                 arrival = arrival_for_pick(pick, self.qmlevent)
                 pickFlag = self.create_pick_flag(pick, sg, is_modifiable=is_mod, arrival=arrival)
             sg.draw()
@@ -252,7 +253,9 @@ class PickAx:
                     if p not in pick_list:
                         pick_list.append(p)
         if author is not None:
-            pick_list = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, pick_list)
+            pick_list = filter(lambda p: p.creation_info is not None and (
+                p.creation_info.agency_id == author \
+                or p.creation_info.author == author), pick_list)
         return pick_list
     def create_pick_flag(self, pick, seismograph, is_modifiable, arrival=None):
         pickFlag = PickFlag(pick, seismograph, is_modifiable=is_modifiable, arrival=arrival)

@@ -84,10 +84,11 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
 
 def defaultColorFn(pick, arrival, author_colors):
     pick_author = ""
-    if pick.creation_info.author is not None:
-        pick_author = pick.creation_info.author
-    elif pick.creation_info.agency_id is not None:
-        pick_author = pick.creation_info.agency_id
+    if pick.creation_info is not None:
+        if pick.creation_info.author is not None:
+            pick_author = pick.creation_info.author
+        elif pick.creation_info.agency_id is not None:
+            pick_author = pick.creation_info.agency_id
     pick_author = pick_author.strip()
 
     # big list of color names here:

@@ -4,6 +4,7 @@ from obspy.core.event.origin import Pick
 from obspy.core.event.base import WaveformStreamID, CreationInfo
 from obspy import UTCDateTime
 from obspy.core.event.magnitude import Amplitude
+import re
 
 def create_pick_on_stream(stream, time, phase="pick", creation_info=None, filter_name=None):
     """
@@ -84,14 +85,15 @@ def pick_to_string(p, qmlevent=None, start=None):
     pname = a.phase if a is not None and a.phase is not None else p.phase_hint
     isArr = ", Pick" if a is None else ", Arrival"
     author = ""
-    if p.creation_info.agency_id is not None:
-        author += p.creation_info.agency_id+" "
-    if p.creation_info.author is not None:
-        author += p.creation_info.author+ " "
-    author = author.strip()
     ver = ""
-    if p.creation_info.version is not None:
-        ver = f" ({p.creation_info.version})"
+    if p.creation_info is not None:
+        if p.creation_info.agency_id is not None:
+            author += p.creation_info.agency_id+" "
+        if p.creation_info.author is not None:
+            author += p.creation_info.author+ " "
+        if p.creation_info.version is not None:
+            ver = f" ({p.creation_info.version})"
+    author = author.strip()
     offsetStr = f"({p.time-start} s)" if start is not None else ""
     sourceId = f"{p.waveform_id.network_code}.{p.waveform_id.station_code}.{p.waveform_id.location_code}.{p.waveform_id.channel_code}"
     return f"{pname} {p.time} {sourceId} {offsetStr} {amp_str} {author}{ver}{isArr}"
@@ -135,6 +137,11 @@ def pick_from_trace(pick, trace):
             pick.waveform_id.location_code == trace.stats.location and
             pick.waveform_id.channel_code == trace.stats.channel )
 
+def same_author(creation_info_a, creation_info_b):
+    if creation_info_a is None or creation_info_b is None:
+        return False
+    return creation_info_a.author == creation_info_b.author
+
 def merge_picks_to_quake(qmlevent, out_qmlevent, author=None):
     """
     Merges picks from one quake to the other.
@@ -147,6 +154,8 @@ def merge_picks_to_quake(qmlevent, out_qmlevent, author=None):
         found = False
         for catp in out_qmlevent.picks:
             if p.time == catp.time and \
+                p.creation_info is not None and \
+                catp.creation_info is not None and \
                 p.creation_info.author == catp.creation_info.author:
                 found = True
                 break
@@ -193,10 +202,15 @@ def extractEventId(qmlEvent, host=""):
 
     @param   qml Quake(Event) to extract from
     @param   host optional source of the xml to help determine the event id style
-    @returns     Extracted Id, or None if we can't figure it out
+    @returns     Extracted Id, or resource_id.id if we can't figure it out
     """
-    eventId = qmlEvent.extra.eventid.value
-    catalogEventSource = qmlEvent.extra.eventsource.value
+    eventId = ""
+    catalogEventSource = None
+    if 'extra' in qmlEvent:
+        if qmlEvent.extra.eventid is not None:
+            eventId = qmlEvent.extra.eventid.value
+        if qmlEvent.extra.eventsource is not None:
+            catalogEventSource = qmlEvent.extra.eventsource.value
 
     if eventId != "":
         if host == "USGS" or catalogEventSource is not None:
@@ -216,7 +230,7 @@ def extractEventId(qmlEvent, host=""):
       if parsed:
         return parsed.group(1)
 
-    return None
+    return publicid
 
 def reloadQuakeMLWithPicks(qmlevent, client=None, host="USGS", debug=False):
     if client is None:
