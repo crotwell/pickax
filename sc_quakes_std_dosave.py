@@ -13,24 +13,25 @@ from pickax import (
     )
 from obspy import Catalog, read_events
 
-debug = False
-
 def create_dosaveFn(quake_query_params, station_query_params, seis_params, config=None, picks_file="picks_sc_quakes.qml"):
     if config is None:
         config = PickAxConfig()
     # Load stations, events and seismograms
     print(f"Load station metadata...")
-    sta_itr = FDSNStationIterator(station_query_params, debug=debug)
+    sta_itr = FDSNStationIterator(station_query_params, debug=config.debug)
+    print(f"Networks: {len(sta_itr.inv.networks)}, Stations: {len(sta_itr)}")
     print(f"Load earthquakes...")
-    # this loads quakes from remote server
-    quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
-    # this loads from local file
-    #quake_itr = QuakeMLFileIterator(picks_file)
+    if isinstance(quake_query_params, (str, os.PathLike)):
+        # this loads from local file
+        quake_itr = QuakeMLFileIterator(quake_query_params)
+    else:
+        # this loads quakes from remote server
+        quake_itr = FDSNQuakeIterator(quake_query_params, debug=config.debug)
     print(f"Number of quakes: {len(quake_itr.quakes)}")
 
     # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
     # at each station that has both
-    seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, debug=debug, **seis_params))
+    seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, debug=config.debug, **seis_params))
     # cache make prev/next a bit faster if data is already here
     seis_itr = CacheSeismogramIterator(seis_itr)
 
