@@ -10,6 +10,7 @@ from obspy import read_events, Catalog, read_inventory, Inventory
 
 
 def format_hypoinverse(inv):
+    lines = []
     for n in inv:
         for s in n.stations:
             for c in s.channels:
@@ -21,6 +22,8 @@ def format_hypoinverse(inv):
                 codelon = "E" if c.longitude > 0 else "S"
                 out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}  {c.elevation:>5.1f}   A 0.00  0.00  0.00  0.00 3  0.00{c.location_code}{c.code}"
                 print(out)
+                lines.append(out)
+    return lines
 
 def do_parseargs():
     parser = argparse.ArgumentParser(
@@ -54,7 +57,10 @@ def main():
     bad_file_chars_pat = re.compile(r'[\s:\(\)/]+')
     if args.staxml:
         inv = read_inventory(args.staxml)
-        format_hypoinverse(inv)
+        lines = format_hypoinverse(inv)
+        with open(f"{args.staxml}.sta", "w") as f:
+            for l in lines:
+                f.write(f"{l}\n")
     if args.quakeml:
         if os.path.exists(args.quakeml):
             catalog_file = Path(args.quakeml)

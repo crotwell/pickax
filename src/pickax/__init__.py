@@ -26,7 +26,7 @@ from .seismogram_iterator import (
     ThreeAtATime,
     CacheSeismogramIterator,
     )
-from hypoinverse import format_hypoinverse
+from .hypoinverse import format_hypoinverse
 from .eqtransform import read_eqt_csv
 from .traveltime import TravelTimeCalc
 from .version import __version__
