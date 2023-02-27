@@ -26,6 +26,7 @@ from .seismogram_iterator import (
     ThreeAtATime,
     CacheSeismogramIterator,
     )
+from hypoinverse import format_hypoinverse
 from .eqtransform import read_eqt_csv
 from .traveltime import TravelTimeCalc
 from .version import __version__
@@ -51,6 +52,7 @@ __all__ = [
     FDSNQuakeIterator,
     StationIterator,
     FDSNStationIterator,
+    format_hypoinverse,
     SeismogramIterator,
     FDSNSeismogramIterator,
     ThreeAtATime,

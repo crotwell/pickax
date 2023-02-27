@@ -33,3 +33,4 @@ dependencies = [
     "mergepicks" = "pickax.mergepicks:main"
     "dumppicks" = "pickax.dumppicks:main"
     "eqtranspicks" = "pickax.eqtransform:main"
+    "hypoinverse" = "pickax.hypoinverse:main"
