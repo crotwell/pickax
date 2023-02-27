@@ -20,6 +20,7 @@ from .seismogram_iterator import (
     ThreeAtATime,
     CacheSeismogramIterator,
     )
+from .eqtransform import read_eqt_csv
 from .traveltime import TravelTimeCalc
 from .version import __version__
 
@@ -45,5 +46,6 @@ __all__ = [
     ThreeAtATime,
     CacheSeismogramIterator,
     TravelTimeCalc,
+    read_eqt_csv,
     version
 ]

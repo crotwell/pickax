@@ -32,3 +32,4 @@ dependencies = [
     "usgspicks" = "pickax.usgspicks:main"
     "mergepicks" = "pickax.mergepicks:main"
     "dumppicks" = "pickax.dumppicks:main"
+    "eqtranspicks" = "pickax.eqtransform:main"
