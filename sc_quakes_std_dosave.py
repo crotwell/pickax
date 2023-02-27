@@ -10,6 +10,7 @@ from pickax import (
     merge_picks_to_quake,
     extractEventId,
     QuakeMLFileIterator,
+    CachedPicksQuakeItr
     )
 from obspy import Catalog, read_events
 
@@ -23,7 +24,7 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     print(f"Load earthquakes...")
     if isinstance(quake_query_params, (str, os.PathLike)):
         # this loads from local file
-        quake_itr = QuakeMLFileIterator(quake_query_params)
+        quake_itr = CachedPicksQuakeItr(QuakeMLFileIterator(quake_query_params), cachedir="../by_eventid")
     else:
         # this loads quakes from remote server
         quake_itr = FDSNQuakeIterator(quake_query_params, debug=config.debug)

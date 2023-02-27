@@ -5,13 +5,19 @@ from .pick_util import (
     merge_picks_to_quake,
     )
 from .pickax import PickAx
-from .pickax_config import PickAxConfig
+from .pickax_config import (
+    PickAxConfig,
+    origin_mag_to_string,
+    default_titleFn,
+    defaultColorFn,
+    )
 from .areautil import in_area, Point
 from .blit_manager import BlitManager
 from .quake_iterator import (
     QuakeIterator,
     FDSNQuakeIterator,
-    QuakeMLFileIterator
+    QuakeMLFileIterator,
+    CachedPicksQuakeItr
     )
 from .station_iterator import StationIterator, FDSNStationIterator
 from .seismogram_iterator import (
@@ -29,6 +35,9 @@ version = __version__
 __all__ = [
     PickAx,
     PickAxConfig,
+    origin_mag_to_string,
+    default_titleFn,
+    defaultColorFn,
     BlitManager,
     in_area,
     Point,
@@ -38,6 +47,7 @@ __all__ = [
     extractEventId,
     QuakeIterator,
     QuakeMLFileIterator,
+    CachedPicksQuakeItr,
     FDSNQuakeIterator,
     StationIterator,
     FDSNStationIterator,

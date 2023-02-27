@@ -71,7 +71,7 @@ class PickAxConfig:
 
 
 
-def default_titleFn(stream=None, qmlevent=None, inventory=None):
+def origin_mag_to_string(qmlevent=None):
     origin_str = "Unknown quake"
     mag_str = ""
     if qmlevent.preferred_origin() is not None:
@@ -80,7 +80,10 @@ def default_titleFn(stream=None, qmlevent=None, inventory=None):
     if qmlevent.preferred_magnitude() is not None:
         mag = qmlevent.preferred_magnitude()
         mag_str = f"{mag.mag} {mag.magnitude_type}"
-    return f"{origin_str} {mag_str}"
+    return f"{origin_str} {mag_str}".strip()
+
+def default_titleFn(stream=None, qmlevent=None, inventory=None):
+    return origin_mag_to_string(qmlevent)
 
 def defaultColorFn(pick, arrival, author_colors):
     pick_author = ""

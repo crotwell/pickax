@@ -3,7 +3,15 @@ from obspy import UTCDateTime, Catalog, read_events
 from obspy.clients.fdsn.header import FDSNException
 from obspy.clients.fdsn.header import FDSNNoDataException
 from obspy.clients.fdsn import Client
-from .pick_util import reloadQuakeMLWithPicks, extractEventId
+from .pick_util import (
+    reloadQuakeMLWithPicks,
+    extractEventId,
+    merge_picks_to_quake
+    )
+
+from pathlib import Path
+import re
+import os
 
 class QuakeIterator(ABC):
     def __init__(self):
@@ -82,6 +90,7 @@ class FDSNQuakeIterator(QuakeIterator):
             #self.next_batch()
             return None
         quake = self.quakes[self.batch_idx]
+
         if self.dc_name == "USGS":
             quake = reloadQuakeMLWithPicks(quake, client=self.client, debug=self.debug)
             self.quakes[self.batch_idx] = quake
@@ -94,3 +103,29 @@ class FDSNQuakeIterator(QuakeIterator):
         return self.quakes[self.batch_idx]
     def beginning(self):
         self.batch_idx = -1
+
+class CachedPicksQuakeItr(QuakeIterator):
+    def __init__(self, quake_itr, cachedir='by_eventid'):
+        self.quake_itr = quake_itr
+        self.quakes = self.quake_itr.quakes
+        self.cachedir = Path(cachedir)
+        self.bad_file_chars_pat = re.compile(r'[\s:\(\)/]+')
+    def next(self):
+        q = self.quake_itr.next()
+        return self.reload_picks(q)
+    def prev(self):
+        q = self.quake_itr.prev()
+        return self.reload_picks(q)
+    def beginning(self):
+        return self.quake_itr.beginning()
+    def reload_picks(self, quake):
+        # look for picks in cache dir
+        if quake is None:
+            return quake
+        eid = extractEventId(quake)
+        qfile = f"eventid_{re.sub(self.bad_file_chars_pat, '_', eid)}.qml"
+        qpath=  Path(self.cachedir / qfile)
+        if qpath.exists():
+            pick_quake = read_events(qpath)[0]
+            merge_picks_to_quake(pick_quake, quake)
+        return quake
