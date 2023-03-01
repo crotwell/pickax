@@ -115,7 +115,9 @@ def main():
                 #phsfile.write("SB4  BG  DPZ IPU1201001030833  826   1101    0   0   0      0 0  0  -9   0  1215205  0 54.0248  0  0  53   0J  -- 0DPZ X\n")
                 #phsfile.write("SB4  BG  DPE    4201001030833    0   0  0  881ES 2  18      0 0 40   0 -16  1215200  0     248  0  0   0  23J  -- 0DPE\n")
                 for pick in quake.picks:
-                    if args.authors is None or len(args.authors) == 0 or pick.creation_info.author in args.authors:
+                    if args.authors is None or len(args.authors) == 0 \
+                            or pick.creation_info.author in args.authors \
+                            or pick.creation_info.agency_id in args.authors:
                         phsfile.write(f"{pick_to_phs(pick)}\n")
 
         #if args.hypodd:
