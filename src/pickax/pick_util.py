@@ -243,3 +243,14 @@ def reloadQuakeMLWithPicks(qmlevent, client=None, host="USGS", debug=False):
         else:
             raise Error("more than one event returned, should not happen")
     return None
+
+def inventory_for_catalog_picks(catalog, window=600, client=None, host="IRIS", debug=False):
+    wid_list = []
+    for qmlevent in catalog:
+        otime = qmlevent.preferred_origin().time
+        for pick in qmlevent.picks:
+            wid = pick.waveform_id
+            wid_list.append((wid.network_code, wid.station_code, wid.location_code, wid.channel_code, otime, (otime+600)))
+    if client is None:
+        client = Client(host, _discover_services=False, debug=debug)
+    return client.get_stations_bulk(wid_list, level="channel", )

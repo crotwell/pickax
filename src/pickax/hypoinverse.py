@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import argparse
 from obspy import read_events, Catalog, read_inventory, Inventory
+from .pick_util import inventory_for_catalog_picks, arrival_for_pick
 
 def qml_to_phs_header(quake):
     otime = quake.preferred_origin().time
@@ -16,7 +17,7 @@ def qml_to_phs_header(quake):
     depth ="  000"
     return f"{ymdhms}{osec:>5d}{lat}{lon}{depth}"
 
-def pick_to_phs(pick):
+def pick_to_phs(pick, qmlevent):
     weight = "4"
     wid = pick.waveform_id
     sourceId = f"{wid.station_code:<5}{wid.network_code:<2}  {wid.channel_code:<3}"
@@ -24,12 +25,19 @@ def pick_to_phs(pick):
     psec = pick.time.second*100+ int(pick.time.microsecond/10000)
     pwave = f"   {weight}{p_ymdhm}    0   0  0"
     swave = f"    0   0  0"
-    if pick.phase_hint == "P":
+    phase_hint = pick.phase_hint
+    if phase_hint is None:
+        a = arrival_for_pick(pick, qmlevent)
+        if a is not None and a.phase is not None:
+            phase_hint = a.phase
+        else:
+            print(f"Warning: skipping pick as no phase_hint: {pick}")
+    if phase_hint == "P" or phase_hint.startswith("P"):
         pwave = f" P {weight}{p_ymdhm}{psec:>5d}   0"
-    elif pick.phase_hint == "S":
+    elif phase_hint == "S" or phase_hint.startswith("S"):
         swave = f"{psec:>5d} S {weight}"
     else:
-        raise Error("Unknown phase hint"+p.phase_hint)
+        raise Exception(f"Unknown phase hint: {phase_hint}")
     otherstuff = "  18      0 0 40   0 -16  1215200  0     248  0  0   0  23J  "
     return f"{sourceId} {pwave}{swave}{otherstuff}{wid.location_code}"
 
@@ -43,9 +51,8 @@ def format_hypoinverse(inv):
                 codelat = "N" if c.latitude > 0 else "S"
                 deglon = math.floor(abs(c.longitude))
                 minlon = 60*(abs(c.longitude)-deglon)
-                codelon = "E" if c.longitude > 0 else "S"
+                codelon = "E" if c.longitude > 0 else "W"
                 out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}  {c.elevation:>5.1f}   A 0.00  0.00  0.00  0.00 3  0.00{c.location_code}{c.code}"
-                print(out)
                 lines.append(out)
     return lines
 
@@ -74,6 +81,12 @@ def do_parseargs():
         "--staxml",
         required=False,
         help="StationXML file to load",
+    )
+    parser.add_argument(
+        "--invws",
+        required=False,
+        action="store_true",
+        help="query StationXML from FDSN web service for all channels with picks",
     )
     parser.add_argument(
         "-d",
@@ -118,7 +131,18 @@ def main():
                     if args.authors is None or len(args.authors) == 0 \
                             or pick.creation_info.author in args.authors \
                             or pick.creation_info.agency_id in args.authors:
-                        phsfile.write(f"{pick_to_phs(pick)}\n")
+                        phsfile.write(f"{pick_to_phs(pick, quake)}\n")
+                phsfile.write(f"    9999\n")
+        if args.invws:
+            inv = inventory_for_catalog_picks(catalog, args.authors)
+            outfile = Path(outdir / f"pick_channels.staxml")
+            inv.write(outfile, format="StationXML")
+            lines = format_hypoinverse(inv)
+            outfile = Path(outdir / f"pick_channels.sta")
+            with open(outfile, "w") as f:
+                for l in lines:
+                    f.write(f"{l}\n")
+
 
         #if args.hypodd:
         #    catalog.write(catalog_file, format="HYPODD")

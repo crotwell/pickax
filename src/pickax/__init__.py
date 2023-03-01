@@ -3,6 +3,7 @@ from .pick_util import (
     extractEventId,
     merge_picks_to_catalog,
     merge_picks_to_quake,
+    inventory_for_catalog_picks,
     )
 from .pickax import PickAx
 from .pickax_config import (
@@ -46,6 +47,7 @@ __all__ = [
     merge_picks_to_catalog,
     merge_picks_to_quake,
     extractEventId,
+    inventory_for_catalog_picks,
     QuakeIterator,
     QuakeMLFileIterator,
     CachedPicksQuakeItr,
