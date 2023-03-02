@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from obspy.clients.fdsn import Client
-from obspy import Inventory
+from obspy import Inventory, read_inventory
 from obspy.clients.fdsn.header import FDSNNoDataException
 
 
@@ -18,24 +18,13 @@ class StationIterator(ABC):
     def ending(self):
         pass
 
-class FDSNStationIterator(StationIterator):
-    def __init__(self, query_params, dc_name="IRIS", debug=False):
+class StationXMLIterator(StationIterator):
+    def __init__(self, inv, debug=False):
         self.debug = debug
         self.__empty__ = None, None
-        self.dc_name = dc_name
-        self.query_params = dict(query_params)
-        if "level" not in query_params:
-            self.query_params["level"] = "channel"
         self.net_idx = 0
         self.sta_idx = -1
-        self.inv = self.__load__()
-
-    def __load__(self):
-        try:
-            client = Client(self.dc_name, _discover_services=False, debug=self.debug)
-            return client.get_stations(**self.query_params)
-        except FDSNNoDataException:
-            return Inventory()
+        self.inv = inv
     def current(self):
         return self.inv.networks[self.net_idx], self.inv.networks[self.net_idx].stations[self.sta_idx]
     def next(self):
@@ -67,3 +56,25 @@ class FDSNStationIterator(StationIterator):
         for n in self.inv.networks:
             count += len(n.stations)
         return count
+
+
+class StationXMLFileIterator(StationXMLIterator):
+    def __init__(self, filename):
+        super().__init__(read_inventory(filename))
+
+class FDSNStationIterator(StationXMLIterator):
+    def __init__(self, query_params, dc_name="IRIS", debug=False):
+        self.debug = debug
+        self.__empty__ = None, None
+        self.dc_name = dc_name
+        self.query_params = dict(query_params)
+        if "level" not in query_params:
+            self.query_params["level"] = "channel"
+        super().__init__(self.__load__())
+
+    def __load__(self):
+        try:
+            client = Client(self.dc_name, _discover_services=False, debug=self.debug)
+            return client.get_stations(**self.query_params)
+        except FDSNNoDataException:
+            return Inventory()

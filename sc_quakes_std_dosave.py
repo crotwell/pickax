@@ -4,6 +4,7 @@ from pickax import (
     PickAxConfig,
     FDSNQuakeIterator, FDSNStationIterator,
     FDSNSeismogramIterator,
+    StationXMLFileIterator,
     ThreeAtATime,
     CacheSeismogramIterator,
     merge_picks_to_catalog,
@@ -19,7 +20,12 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
         config = PickAxConfig()
     # Load stations, events and seismograms
     print(f"Load station metadata...")
-    sta_itr = FDSNStationIterator(station_query_params, debug=config.debug)
+    if isinstance(station_query_params, (str, os.PathLike)):
+        # this loads from local file
+        sta_itr = StationXMLFileIterator(station_query_params)
+    else:
+        # this loads stations/channels from remote server
+        sta_itr = FDSNStationIterator(station_query_params, debug=config.debug)
     print(f"Networks: {len(sta_itr.inv.networks)}, Stations: {len(sta_itr)}")
     print(f"Load earthquakes...")
     if isinstance(quake_query_params, (str, os.PathLike)):

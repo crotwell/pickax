@@ -20,7 +20,11 @@ from .quake_iterator import (
     QuakeMLFileIterator,
     CachedPicksQuakeItr
     )
-from .station_iterator import StationIterator, FDSNStationIterator
+from .station_iterator import (
+    StationIterator,
+    FDSNStationIterator,
+    StationXMLFileIterator,
+    )
 from .seismogram_iterator import (
     SeismogramIterator,
     FDSNSeismogramIterator,

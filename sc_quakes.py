@@ -31,6 +31,9 @@ quake_query_params = {
     "minmag": 3.0,
     "orderby": "time-asc",
 }
+# alternatively, load from existing QuakeML file
+# quake_query_params = "my_sc_quakes.qml"
+
 # station/channel parameters, server defaults to IRIS
 sta_query_params = {
     "network": "CO,TA,N4,US",
@@ -42,6 +45,10 @@ sta_query_params = {
     "channel": "HH?,HN?",
     "level": "response",
 }
+
+# alternatively, may be faster to preload all station,channels like:
+# curl -o all_sc_stations.staxml 'https://service.iris.edu/fdsnws/station/1/query?net=CO,N4,US,TA&level=response&format=xml&maxlat=35.415&minlon=-83.487&maxlon=-78.257&minlat=31.867&includecomments=false&nodata=404'
+# sta_query_params = "all_sc_stations.staxml"
 
 # calculate time window from predicted traveltimes for phases and offsets
 # origin is allowed as a phase name to base offsets on origin time of quake
