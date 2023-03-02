@@ -52,7 +52,7 @@ def format_hypoinverse(inv):
                 deglon = math.floor(abs(c.longitude))
                 minlon = 60*(abs(c.longitude)-deglon)
                 codelon = "E" if c.longitude > 0 else "W"
-                out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}  {c.elevation:>5.1f}   A 0.00  0.00  0.00  0.00 3  0.00{c.location_code}{c.code}"
+                out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}     0   A 0.00  0.00  0.00  0.00 3  0.00{c.location_code}{c.code}"
                 lines.append(out)
     return lines
 
@@ -112,7 +112,8 @@ def main():
             for l in lines:
                 f.write(f"{l}\n")
     if args.quakeml:
-        if os.path.exists(args.quakeml):
+        quakemlPath = Path(args.quakeml)
+        if quakemlPath.exists():
             catalog_file = Path(args.quakeml)
             saved_file = catalog_file.parent / (args.quakeml+".save")
         elif args.quakeml.startswith("http"):
@@ -121,7 +122,7 @@ def main():
             print(f"File {args.quakeml} does not seem to exist, cowardly quitting...")
             return
         catalog = read_events(args.quakeml)
-        outfile = Path(outdir / f"{args.quakeml}.phs")
+        outfile = Path(outdir / f"{quakemlPath.stem}.phs")
         with open(outfile, "w") as phsfile:
             for idx, quake in enumerate(catalog):
                 phsfile.write(f"{qml_to_phs_header(quake)}\n")
