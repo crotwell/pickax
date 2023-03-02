@@ -9,6 +9,8 @@ keymap_desc = {
     'DISPLAY_ALL_PICKS': "Display all picks",
     'NEXT_FILTER': "Apply next filter",
     'PREV_FILTER': "Apply previous filter",
+    'TRACE_AMP': "Indivudual min-max scale for traces",
+    'GLOBAL_AMP': "Global amplitude, all on same scale",
     'GO_NEXT': "Go to next data",
     'GO_PREV': "Go to previous data",
     'GO_QUIT': "Quit",

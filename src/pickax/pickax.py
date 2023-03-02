@@ -198,6 +198,19 @@ class PickAx:
             for sg in self.seismographList:
                 sg.update_xlim(xmin+xshift, xmax+xshift)
             self.fig.canvas.draw_idle()
+        elif self.config.keymap[event.key] == "TRACE_AMP":
+            for sg in self.seismographList:
+                sg.unset_ylim()
+            self.fig.canvas.draw_idle()
+        elif self.config.keymap[event.key] == "GLOBAL_AMP":
+            gl_min, gl_max = self.seismographList[0].calc_zoom_amp()
+            for sg in self.seismographList:
+                sg_min, sg_max = sg.calc_zoom_amp()
+                gl_min = min(gl_min, sg_min)
+                gl_max = max(gl_max, sg_max)
+            for sg in self.seismographList:
+                sg.set_ylim(gl_min, gl_max)
+            self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
         elif self.config.keymap[event.key]  == "GO_NEXT":

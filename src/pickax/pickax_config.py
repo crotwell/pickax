@@ -14,6 +14,8 @@ DEFAULT_KEYMAP = {
     'D': "DISPLAY_ALL_PICKS",
     'f': "NEXT_FILTER",
     'F': "PREV_FILTER",
+    'y': "TRACE_AMP",
+    'Y': "GLOBAL_AMP",
     'x': "ZOOM_IN",
     'X': "ZOOM_OUT",
     'z': "ZOOM_ORIG",

@@ -46,6 +46,7 @@ class Seismograph:
         self.traveltime_calc = traveltime_calc
         self._init_data_(stream, qmlevent)
         self._prev_zoom_time = None
+        self.ylim = None
     def _init_data_(self, stream, qmlevent=None):
         self.stream = stream
         if qmlevent is not None:
@@ -118,6 +119,9 @@ class Seismograph:
             self.draw_flag(self.qmlevent.preferred_origin().time, "origin", color="green")
 
     def draw_predicted_flags(self):
+        """
+        Calculate and draw flags for predicted arrivals.
+        """
         if self.traveltime_calc is not None \
                  and self.qmlevent is not None \
                 and self.qmlevent.preferred_origin() is not None:
@@ -193,7 +197,7 @@ class Seismograph:
         else:
             filterFn = self.config.filters[idx]['fn']
             orig_copy = self.stream.copy()
-            out_stream = filterFn(orig_copy, self._filtered_stream, self.config.filters[idx]['name'], idx )
+            out_stream = filterFn(orig_copy, self._filtered_stream, self.config.filters[idx]['name'], idx, self.inventory, self.qmlevent )
             if out_stream is not None:
                 # fun returned new stream
                 self._filtered_stream = out_stream
@@ -205,7 +209,7 @@ class Seismograph:
 
         self.zoom_amp()
 
-    def zoom_amp(self):
+    def calc_zoom_amp(self):
         xmin, xmax, ymin, ymax = self.ax.axis()
         calc_min = ymax
         calc_max = ymin
@@ -222,7 +226,21 @@ class Seismograph:
             t = calc_max
             calc_max = calc_min
             calc_min = t
-        self.ax.set_ylim(calc_min, calc_max)
+        return (calc_min, calc_max)
+    def zoom_amp(self):
+        if self.ylim == None:
+            calc_min, calc_max = self.calc_zoom_amp()
+            self.ax.set_ylim(calc_min, calc_max)
+        else:
+            self.ax.set_ylim(*self.ylim)
+        self.refresh_display()
+    def unset_ylim(self):
+        self.ylim = None
+        self.ax.set_ylim(auto=True)
+        self.refresh_display()
+    def set_ylim(self, min_amp, max_amp):
+        self.ylim = (min_amp, max_amp)
+        self.ax.set_ylim(min_amp, max_amp)
         self.refresh_display()
     def refresh_display(self):
         self.clear_flags()
