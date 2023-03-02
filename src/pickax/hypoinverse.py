@@ -52,7 +52,7 @@ def format_hypoinverse(inv):
                 deglon = math.floor(abs(c.longitude))
                 minlon = 60*(abs(c.longitude)-deglon)
                 codelon = "E" if c.longitude > 0 else "W"
-                out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}     0   A 0.00  0.00  0.00  0.00 3  0.00{c.location_code}{c.code}"
+                out = f"{s.code:<5} {n.code:<2}  {c.code:<3}  {deglat:>2} {minlat:>7.4f}{codelat}{deglon:>3} {minlon:>7.4f}{codelon}   00.0     0.00  0.00  0.00  0.00 0  1.00{c.location_code}{c.code}"
                 lines.append(out)
     return lines
 
