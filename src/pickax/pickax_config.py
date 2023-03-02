@@ -46,6 +46,7 @@ class PickAxConfig:
         self.titleFn = default_titleFn
         self.finishFn = None
         self.creation_info = None
+        self.resource_prefix="smi:pickax"
         self.filters = []
         self.phase_list = []
         self._model =  None

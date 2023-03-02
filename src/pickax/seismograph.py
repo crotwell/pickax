@@ -144,10 +144,11 @@ class Seismograph:
         filter_name = None
         if self.curr_filter != -1:
             filter_name = self.config.filters[self.curr_filter]['name']
-            filter_name = re.sub(zap_space, '_', filt_name)
+            filter_name = re.sub(zap_space, '_', filter_name)
         pick, amp = create_pick_on_stream(self.stream,
                                        self.start + event.xdata,
                                        phase,
+                                       resource_prefix=self.config.resource_prefix,
                                        creation_info=self.config.creation_info,
                                        filter_name=filter_name)
 
@@ -187,7 +188,6 @@ class Seismograph:
         """
         Applies the idx-th filter to the waveform and redraws.
         """
-        print(f"sq do_filter {idx}")
         self.clear_trace()
         self.clear_flags()
         if idx < 0 or idx >= len(self.config.filters):

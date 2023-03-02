@@ -2,16 +2,19 @@ from obspy.clients.fdsn.header import URL_MAPPINGS
 from obspy.clients.fdsn import Client
 from obspy.core.event.origin import Pick
 from obspy.core.event.base import WaveformStreamID, CreationInfo
+from obspy.core.event.resourceid import ResourceIdentifier
 from obspy import UTCDateTime
 from obspy.core.event.magnitude import Amplitude
 import re
 
-def create_pick_on_stream(stream, time, phase="pick", creation_info=None, filter_name=None):
+zap_space = re.compile(r'\s+')
+
+def create_pick_on_stream(stream, time, phase="pick", creation_info=None, resource_prefix="pickax", filter_name=None):
     """
     Creates a pick based on a gui event, like keypress and mouse position.
     Optionally give the pick a phase name, defaults to "pick".
     """
-    pick = Pick()
+    pick = Pick(resource_id=ResourceIdentifier(prefix=resource_prefix))
     pick.method_id = "PickAx"
     pick.phase_hint = phase
     pick.time = time
@@ -41,7 +44,7 @@ def create_pick_on_stream(stream, time, phase="pick", creation_info=None, filter
         offset = time - tr.stats.starttime
         index = round(offset/tr.stats.delta)
         if index >=0 and index < len(tr):
-            amp = Amplitude()
+            amp = Amplitude(resource_id=ResourceIdentifier(prefix=resource_prefix))
             amp.generic_amplitude = tr.data[index]
             amp.pick_id = pick.resource_id
             amp.waveform_id = pick.waveform_id

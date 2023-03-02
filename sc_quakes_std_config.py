@@ -24,6 +24,7 @@ def createStandardConfig(author=None):
 
     # Configure the tool
     pickax_config = PickAxConfig()
+    pickax_config.resource_prefix="sc.edu"
     pickax_config.creation_info = CreationInfo(author=author, version="0.0.1")
     # big list of color names at:
     # https://matplotlib.org/stable/gallery/color/named_colors.html
