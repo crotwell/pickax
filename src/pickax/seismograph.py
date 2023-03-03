@@ -13,6 +13,7 @@ from .pick_util import (
     arrival_for_pick,
     create_pick_on_stream
     )
+from .pickax_config import TRACE_AMP, GLOBAL_AMP
 
 # reg exp to find/replace whitespace in ids
 zap_space = re.compile(r'\s+')
@@ -80,6 +81,12 @@ class Seismograph:
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
         self.ax.set_title(self.list_channels())
+        if self.config.amplitude_mode == TRACE_AMP:
+            self.ax.set_ylim(auto=True)
+        else:
+            if self.ylim == None:
+                self.ylim = self.calc_zoom_amp()
+            self.ax.set_ylim(*self.ylim)
         # add lines
         self.draw_stream()
         self.draw_all_flags()
@@ -135,7 +142,8 @@ class Seismograph:
                     for arr in arrivals:
                         self.draw_flag(otime + arr.time, arr.name, "grey")
                 else:
-                    print("can't find inv for tr")
+                    if self.config.verbose:
+                        print("can't find inv for tr")
     def do_pick(self, event, phase="pick"):
         """
         Creates a pick based on a gui event, like keypress and mouse position.
@@ -208,16 +216,16 @@ class Seismograph:
             self.curr_filter = idx
 
         self.zoom_amp()
-
-    def calc_zoom_amp(self):
-        xmin, xmax, ymin, ymax = self.ax.axis()
-        calc_min = ymax
-        calc_max = ymin
-        tstart = self.start + xmin
-        tend = self.start + xmax
+    def calc_amplitude_range(self, tmin=0, tmax=0):
+        tstart = self.start + tmin
+        tend = self.start + tmax
         st = self._filtered_stream if self._filtered_stream is not None else self.stream
+        if len(st) == 0 or len(st[0]) == 0:
+            return None, None
+        calc_min = st[0][0]
+        calc_max = st[0][0]
         for tr in st:
-            tr_slice = tr.slice(tstart, tend)
+            tr_slice = tr.slice(tstart, tend) if tmin < tmax else tr
             if tr_slice is not None and tr_slice.data is not None and len(tr_slice.data) > 0:
                 calc_min = min(calc_min, tr_slice.data.min())
                 calc_max = max(calc_max, tr_slice.data.max())
@@ -226,6 +234,14 @@ class Seismograph:
             t = calc_max
             calc_max = calc_min
             calc_min = t
+        return (calc_min, calc_max)
+    def calc_zoom_amp(self):
+        xmin, xmax, ymin, ymax = self.ax.axis()
+        calc_min, calc_max = self.calc_amplitude_range(xmin, xmax)
+        if calc_min == None or calc_max == None:
+            # in case no trace in window
+            calc_max = ymax
+            calc_min = ymin
         return (calc_min, calc_max)
     def zoom_amp(self):
         if self.ylim == None:
@@ -240,7 +256,7 @@ class Seismograph:
         self.refresh_display()
     def set_ylim(self, min_amp, max_amp):
         self.ylim = (min_amp, max_amp)
-        self.ax.set_ylim(min_amp, max_amp)
+        self.ax.set_ylim(*self.ylim)
         self.refresh_display()
     def refresh_display(self):
         self.clear_flags()

@@ -9,7 +9,7 @@ from IPython import get_ipython
 import matplotlib.pyplot as plt
 from prompt_toolkit.application.current import get_app
 
-from .pickax_config import PickAxConfig
+from .pickax_config import PickAxConfig, TRACE_AMP, GLOBAL_AMP, WINDOW_AMP
 from .flag import PickFlag
 from .seismograph import Seismograph
 from .traveltime import TravelTimeCalc
@@ -127,17 +127,33 @@ class PickAx:
                             inventory = self.inventory,
                             traveltime_calc = self.taveltime_calc,
                             )
+            if self.config.amplitude_mode == TRACE_AMP:
+                sg.unset_ylim()
             for pick in sg.channel_picks():
                 is_mod = same_author(pick.creation_info, self.config.creation_info)
                 arrival = arrival_for_pick(pick, self.qmlevent)
                 pickFlag = self.create_pick_flag(pick, sg, is_modifiable=is_mod, arrival=arrival)
-            sg.draw()
             self.seismographList.append(sg)
+        if self.config.amplitude_mode == GLOBAL_AMP:
+            gl_min, gl_max = self.calc_global_amp()
+            for sg in self.seismographList:
+                sg.set_ylim(gl_min, gl_max)
+        for sg in self.seismographList:
+            sg.draw()
         self.fig.tight_layout()
         self.fig.canvas.draw_idle()
         # make sure our window is on the screen and drawn
         plt.show(block=False)
         plt.pause(.1)
+    def calc_global_amp(self):
+        if (len(self.seismographList)) == 0:
+            return (-1,1)
+        gl_min, gl_max = self.seismographList[0].calc_amplitude_range()
+        for sg in self.seismographList:
+            sg_min, sg_max = sg.calc_zoom_amp()
+            gl_min = min(gl_min, sg_min)
+            gl_max = max(gl_max, sg_max)
+        return (gl_min, gl_max)
     def close(self):
         """
         Close the window, goodnight moon.
@@ -198,18 +214,14 @@ class PickAx:
             for sg in self.seismographList:
                 sg.update_xlim(xmin+xshift, xmax+xshift)
             self.fig.canvas.draw_idle()
-        elif self.config.keymap[event.key] == "TRACE_AMP":
+        elif self.config.keymap[event.key] == "AMP_MODE":
+            self.config.toggle_amplitude_mode()
+            if self.config.amplitude_mode == GLOBAL_AMP:
+                gl_min, gl_max = self.calc_global_amp()
+                for sg in self.seismographList:
+                    sg.set_ylim(gl_min, gl_max)
             for sg in self.seismographList:
-                sg.unset_ylim()
-            self.fig.canvas.draw_idle()
-        elif self.config.keymap[event.key] == "GLOBAL_AMP":
-            gl_min, gl_max = self.seismographList[0].calc_zoom_amp()
-            for sg in self.seismographList:
-                sg_min, sg_max = sg.calc_zoom_amp()
-                gl_min = min(gl_min, sg_min)
-                gl_max = max(gl_max, sg_max)
-            for sg in self.seismographList:
-                sg.set_ylim(gl_min, gl_max)
+                sg.refresh_display()
             self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")

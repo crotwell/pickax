@@ -14,8 +14,7 @@ DEFAULT_KEYMAP = {
     'D': "DISPLAY_ALL_PICKS",
     'f': "NEXT_FILTER",
     'F': "PREV_FILTER",
-    'y': "TRACE_AMP",
-    'Y': "GLOBAL_AMP",
+    'y': "AMP_MODE",
     'x': "ZOOM_IN",
     'X': "ZOOM_OUT",
     'z': "ZOOM_ORIG",
@@ -28,6 +27,9 @@ DEFAULT_KEYMAP = {
     'h': "HELP",
 }
 
+TRACE_AMP = "TRACE_AMP"
+WINDOW_AMP = "WINDOW_AMP"
+GLOBAL_AMP = "GLOBAL_AMP"
 
 class PickAxConfig:
     """
@@ -41,6 +43,7 @@ class PickAxConfig:
     def __init__(self):
         self._keymap = {}
         self.debug = False
+        self.verbose = False
         self.scroll_factor = 8
         self.author_colors = {}
         self.titleFn = default_titleFn
@@ -50,6 +53,7 @@ class PickAxConfig:
         self.filters = []
         self.phase_list = []
         self._model =  None
+        self.amplitude_mode = TRACE_AMP
         self.figsize=(10,8)
         self.creation_info = CreationInfo(author=os.getlogin())
         for k,v in DEFAULT_KEYMAP.items():
@@ -71,6 +75,8 @@ class PickAxConfig:
     @model.setter
     def model(self, model):
         self._model = model
+    def toggle_amplitude_mode(self):
+        self.amplitude_mode = TRACE_AMP if self.amplitude_mode == GLOBAL_AMP else GLOBAL_AMP
 
 
 
