@@ -220,8 +220,11 @@ class PickAx:
                 gl_min, gl_max = self.calc_global_amp()
                 for sg in self.seismographList:
                     sg.set_ylim(gl_min, gl_max)
+            else:
+                for sg in self.seismographList:
+                    sg.unset_ylim()
             for sg in self.seismographList:
-                sg.refresh_display()
+                sg.draw()
             self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")

@@ -258,6 +258,14 @@ class Seismograph:
         self.ylim = (min_amp, max_amp)
         self.ax.set_ylim(*self.ylim)
         self.refresh_display()
+    def set_xlim(self, start, end):
+        self.xlim = (start, end)
+        self.ax.set_xlim(*self.xlim)
+        self.refresh_display()
+    def unset_xlim(self):
+        self.xlim = None
+        self.ax.set_xlim(auto=True)
+        self.refresh_display()
     def refresh_display(self):
         self.clear_flags()
         self.clear_trace()
@@ -271,9 +279,9 @@ class Seismograph:
         if self._prev_zoom_time is not None:
             self.unset_zoom_bound()
             if event.xdata > self._prev_zoom_time:
-                self.ax.set_xlim(left=self._prev_zoom_time, right=event.xdata)
+                self.set_xlim(self._prev_zoom_time, event.xdata)
             else:
-                self.ax.set_xlim(left=event.xdata, right=self._prev_zoom_time)
+                self.set_xlim(event.xdata, self._prev_zoom_time)
             self.zoom_amp()
             self._prev_zoom_time = None
         else:
@@ -290,12 +298,13 @@ class Seismograph:
     def do_zoom_out(self):
         xmin, xmax, ymin, ymax = self.ax.axis()
         xwidth = xmax - xmin
-        self.ax.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
+        self.set_xlim(xmin-xwidth/2, xmax+xwidth/2)
         self.zoom_amp()
         self.unset_zoom_bound()
     def do_zoom_original(self):
-        self.ax.set_xlim(auto=True)
-        self.ax.set_ylim(auto=True)
+        self.unset_xlim()
+        if self.config.amplitude_mode == TRACE_AMP:
+            self.unset_ylim()
         self.unset_zoom_bound()
         self.clear_flags()
         self.clear_trace()
@@ -314,7 +323,7 @@ class Seismograph:
         amp = event.ydata
         return time, amp, offset
     def update_xlim(self, xmin, xmax):
-        self.ax.set_xlim(xmin, xmax)
+        self.set_xlim(xmin, xmax)
         self.zoom_amp()
     def list_channels(self):
         """
