@@ -135,6 +135,7 @@ class NodeSacZips(SeismogramIterator):
 def main():
     all = load_nodes("stn_node_all_update.txt")
     print(len(all))
+    all.write("stn_node_all_update.qml", format="STATIONXML")
 
 
 if __name__ == "__main__":
