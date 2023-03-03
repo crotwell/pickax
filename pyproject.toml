@@ -34,3 +34,4 @@ dependencies = [
     "dumppicks" = "pickax.dumppicks:main"
     "eqtranspicks" = "pickax.eqtransform:main"
     "hypoinverse" = "pickax.hypoinverse:main"
+    "exportreal" = "pickax.exportreal:main"
