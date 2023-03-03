@@ -21,6 +21,9 @@ def do_parseargs():
         "-v", "--verbose", help="increase output verbosity", action="store_true"
     )
     parser.add_argument(
+        "--version", help="print version", action="store_true"
+    )
+    parser.add_argument(
         "-l",
         "--loader",
         required=False,
@@ -38,6 +41,9 @@ def main():
     print("Hi PickAx!")
     print("'h' in the display window will show key help.")
     args = do_parseargs()
+    if args.version:
+        print(__version__)
+        return
 
     c = Config()
     c.InteractiveShellApp.exec_lines = [
