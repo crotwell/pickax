@@ -4,23 +4,32 @@ from pickax import (
     PickAxConfig,
     FDSNQuakeIterator, FDSNStationIterator,
     FDSNSeismogramIterator,
+    StationIterator,
     StationXMLFileIterator,
+    StationXMLIterator,
     ThreeAtATime,
     CacheSeismogramIterator,
     merge_picks_to_catalog,
     merge_picks_to_quake,
     extractEventId,
     QuakeMLFileIterator,
-    CachedPicksQuakeItr
+    QuakeIterator,
+    CachedPicksQuakeItr,
+    SeismogramIterator
     )
-from obspy import Catalog, read_events
+from obspy import Catalog, read_events, Inventory
 
 def create_dosaveFn(quake_query_params, station_query_params, seis_params, config=None, picks_file="picks_sc_quakes.qml"):
     if config is None:
         config = PickAxConfig()
     # Load stations, events and seismograms
     print(f"Load station metadata...")
-    if isinstance(station_query_params, (str, os.PathLike)):
+    if isinstance(station_query_params, StationIterator):
+        sta_itr = station_query_params
+
+    elif isinstance(station_query_params, Inventory):
+        sta_itr = StationXMLIterator(station_query_params)
+    elif isinstance(station_query_params, (str, os.PathLike)):
         # this loads from local file
         sta_itr = StationXMLFileIterator(station_query_params)
     else:
@@ -28,7 +37,9 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
         sta_itr = FDSNStationIterator(station_query_params, debug=config.debug)
     print(f"Networks: {len(sta_itr.inv.networks)}, Stations: {len(sta_itr)}")
     print(f"Load earthquakes...")
-    if isinstance(quake_query_params, (str, os.PathLike)):
+    if isinstance(quake_query_params, QuakeIterator):
+        quake_itr = quake_query_params
+    elif isinstance(quake_query_params, (str, os.PathLike)):
         # this loads from local file
         quake_itr = CachedPicksQuakeItr(QuakeMLFileIterator(quake_query_params), cachedir="../by_eventid")
     else:
@@ -36,9 +47,13 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
         quake_itr = FDSNQuakeIterator(quake_query_params, debug=config.debug)
     print(f"Number of quakes: {len(quake_itr.quakes)}")
 
+    if isinstance(seis_params, SeismogramIterator):
+        seis_itr = seis_params
+    else:
+        seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=config.debug, **seis_params)
     # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
     # at each station that has both
-    seis_itr = ThreeAtATime(FDSNSeismogramIterator(quake_itr, sta_itr, debug=config.debug, **seis_params))
+    seis_itr = ThreeAtATime(seis_itr)
     # cache make prev/next a bit faster if data is already here
     seis_itr = CacheSeismogramIterator(seis_itr)
 

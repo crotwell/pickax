@@ -22,6 +22,7 @@ from .quake_iterator import (
     )
 from .station_iterator import (
     StationIterator,
+    StationXMLIterator,
     FDSNStationIterator,
     StationXMLFileIterator,
     )
