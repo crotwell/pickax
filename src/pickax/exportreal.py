@@ -89,8 +89,10 @@ def main():
             outdir.mkdir(parents=True, exist_ok=True)
     if args.staxml:
         inv = read_inventory(args.staxml)
-        lines = format_hypoinverse(inv)
-        outfile = Path(outdir / f"{args.staxml}.sta")
+        lines = format_real(inv)
+
+        in_path = Path(args.staxml)
+        outfile = Path(outdir / f"{in_path.stem}.sta")
         with open(outfile, "w") as f:
             for l in lines:
                 f.write(f"{l}\n")
