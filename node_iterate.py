@@ -27,10 +27,11 @@ def load_nodes(filename):
             nodeid = items[3]
             station = Station(code, lat, lon, elev, description=nodeid)
             sensor = Equipment(serial_number=nodeid)
+            sample_rate = 250
             station.channels = [
-                                Channel("SHZ", "00", lat, lon, elev, 0, azimuth=0, dip=0, sample_rate=1/0.004),
-                                Channel("SHN", "00", lat, lon, elev, 0, azimuth=0, dip=0, sample_rate=1/0.004),
-                                Channel("SHE", "00", lat, lon, elev, 0, azimuth=0, dip=0, sample_rate=1/0.004)
+                                Channel("DPZ", "00", lat, lon, elev, 0, azimuth=0, dip=-90, sample_rate=sample_rate),
+                                Channel("DPN", "00", lat, lon, elev, 0, azimuth=0, dip=0, sample_rate=sample_rate),
+                                Channel("DPE", "00", lat, lon, elev, 0, azimuth=90, dip=0, sample_rate=sample_rate)
                                 ]
             for c in station.channels:
                 c.sensor = sensor
