@@ -42,8 +42,8 @@ def node_sac_file(quake, channel, datadir):
     stream = Stream()
     ymdh = quake.preferred_origin().time.strftime("%Y%m%d")
 
-    print(f"zip glob: {ymdh}_M?.?-*.zip")
-    zipfilelist = datadir.glob(f"{ymdh}_M?.?-*.zip")
+    print(f"zip glob: {ymdh}_M*.zip")
+    zipfilelist = datadir.glob(f"{ymdh}_M*.zip")
     for zf in zipfilelist:
         with ZipFile(zf) as zip:
             globpat = f"*/{channel.sensor.serial_number}*.{channel.code[2]}.sac"
