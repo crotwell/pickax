@@ -35,3 +35,4 @@ dependencies = [
     "eqtranspicks" = "pickax.eqtransform:main"
     "hypoinverse" = "pickax.hypoinverse:main"
     "exportreal" = "pickax.exportreal:main"
+    "exportvelest" = "pickax.exportvelest:main"
