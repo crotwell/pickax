@@ -42,7 +42,6 @@ def node_sac_file(quake, channel, datadir):
     stream = Stream()
     ymdh = quake.preferred_origin().time.strftime("%Y%m%d")
 
-    print(f"zip glob: {ymdh}_M*.zip")
     zipfilelist = datadir.glob(f"{ymdh}_M*.zip")
     for zf in zipfilelist:
         with ZipFile(zf) as zip:
@@ -131,6 +130,13 @@ class NodeSacZips(SeismogramIterator):
         waveforms = Stream()
         for c in sta.channels:
             waveforms += node_sac_file(quake, c, self.datadir)
+        for tr in waveforms:
+            if len(tr.stats.station) > 5:
+                # assume still serial
+                tr.stats.station = sta.code
+                tr.stats.location = "00"
+            if len(tr.stats.network) == 0:
+                tr.stats.network = net.code
         return net, sta, quake, waveforms
 
 def main():
