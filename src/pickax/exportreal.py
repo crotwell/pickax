@@ -112,6 +112,8 @@ def main():
             for idx, quake in enumerate(catalog):
                 phsfile.write(f"{qml_to_phs_header(quake, idx+1)}\n")
                 for pick in quake.picks:
+                    if pick.phase_hint == "pick":
+                        continue
                     if args.authors is None or len(args.authors) == 0 \
                             or pick.creation_info.author in args.authors \
                             or pick.creation_info.agency_id in args.authors:
