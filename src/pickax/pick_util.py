@@ -163,8 +163,7 @@ def merge_picks_to_quake(qmlevent, out_qmlevent, author=None):
                 found = True
                 break
         if not found:
-            to_add.append(p)
-    out_qmlevent.picks = out_qmlevent.picks + to_add
+            out_qmlevent.picks.append(p)
     for p in to_add:
         arr = arrival_for_pick(p, qmlevent)
         if arr is not None:
@@ -188,7 +187,7 @@ def merge_picks_to_catalog(qmlevent, catalog, author=None):
     if not found_quake:
         clean_quake = qmlevent.copy()
         if author is not None:
-            clean_quake.picks = filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, clean_quake.picks)
+            clean_quake.picks = list(filter(lambda p: p.creation_info.agency_id == author or p.creation_info.author == author, clean_quake.picks))
         catalog.append(clean_quake)
     return catalog
 
