@@ -8,23 +8,27 @@ import argparse
 from obspy import read_events, Catalog, read_inventory, Inventory
 from .pick_util import inventory_for_catalog_picks, arrival_for_pick
 
+def latToNS(lat):
+    latC = "N"
+    if lat < 0:
+        latC = "S"
+        lat = abs(lat)
+    return lat, latC
+def lonToEW(lon):
+    lonC = "E"
+    if lon < 0:
+        lonC = "W"
+        lon = abs(lon)
+    return lon, lonC
 def qml_to_phs_header(quake, index):
     mag = quake.preferred_magnitude().mag
     origin = quake.preferred_origin()
     otime = origin.time
     ymdhm = otime.strftime("%y%m%d %H%M")
     osec = otime.second+ (otime.microsecond/1000000)
-    lat = origin.latitude
-    latC = "N"
-    if lat < 0:
-        latC = "S"
-        lat = abs(lat)
-    lon = origin.longitude
-    lonC = "E"
-    if lon < 0:
-        lonC = "W"
-        lon = abs(lon)
-    return f"{ymdhm} {osec:5.2f} {lat:<7.4f}{latC} {lon:>8.4f}{lonC} {(origin.depth/1000):>7.2f} {mag:6.2f}"
+    lat, latC = latToNS(origin.latitude)
+    lon, lonC = lonToEW(origin.longitude)
+    return f"{ymdhm} {osec:5.2f} {lat:<7.4f}{latC} {lon:>8.4f}{lonC} {(origin.depth/1000):>7.2f}  {mag:5.2f}"
 
 def pick_to_pha(pick, quake):
     weight = "1"
@@ -40,14 +44,16 @@ def pick_to_pha(pick, quake):
             print(f"Warning: skipping pick as no phase_hint: {pick}")
     return f"  {wid.station_code:<6}  {phase_hint[0]}   {weight}   {pick_offset:5.2f}"
 
-def format_real(inv):
+def format_velest(inv):
     lines = []
+    idx = 259
     for n in inv:
         for s in n.stations:
-            for c in s.channels:
-                elev_km = c.elevation/1000
-                out = f"{c.latitude} {c.longitude} {n.code} {s.code} {c.code} {elev_km:7.3f}"
-                lines.append(out)
+            lat, latC = latToNS(s.latitude)
+            lon, lonC = lonToEW(s.longitude)
+            out = f"{s.code:<6}{lat:6.4f}{latC} {lon:8.4f}{lonC}    0 1 {idx:3d}  0.00   0.00"
+            lines.append(out)
+            idx += 3
     return lines
 
 def do_parseargs():
@@ -100,7 +106,7 @@ def main():
             outdir.mkdir(parents=True, exist_ok=True)
     if args.staxml:
         inv = read_inventory(args.staxml)
-        lines = format_real(inv)
+        lines = format_velest(inv)
 
         in_path = Path(args.staxml)
         outfile = Path(outdir / f"{in_path.stem}.sta")
@@ -129,16 +135,14 @@ def main():
                     if args.authors is None or len(args.authors) == 0 \
                             or pick.creation_info.author in args.authors \
                             or pick.creation_info.agency_id in args.authors:
-                        phsfile.write(f"{pick_to_pha(pick, quake)}")
+                        phsfile.write(f"{pick_to_pha(pick, quake)}\n")
                         pick_idx+=1
-                        if pick_idx % 6 == 0:
-                            phsfile.write("\n")
                 phsfile.write("\n")
         if args.invws:
             inv = inventory_for_catalog_picks(catalog, args.authors)
             outfile = Path(outdir / f"pick_channels.staxml")
             inv.write(outfile, format="StationXML")
-            lines = format_real(inv)
+            lines = format_velest(inv)
             outfile = Path(outdir / f"pick_channels.sta")
             with open(outfile, "w") as f:
                 for l in lines:
