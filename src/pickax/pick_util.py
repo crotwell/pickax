@@ -252,7 +252,13 @@ def inventory_for_catalog_picks(catalog, window=600, client=None, host="IRIS", d
         otime = qmlevent.preferred_origin().time
         for pick in qmlevent.picks:
             wid = pick.waveform_id
-            wid_list.append((wid.network_code, wid.station_code, wid.location_code, wid.channel_code, otime, (otime+600)))
+            if wid.network_code is None or \
+                wid.station_code is None or \
+                wid.location_code is None or \
+                wid.channel_code is None:
+                print(f"None in Waveform_Id: {wid.network_code}, {wid.station_code}, {wid.location_code}, {wid.channel_code} for pick on {otime}")
+            else:
+                wid_list.append((wid.network_code, wid.station_code, wid.location_code, wid.channel_code, otime, (otime+600)))
     if client is None:
         client = Client(host, _discover_services=False, debug=debug)
     return client.get_stations_bulk(wid_list, level="channel", )
