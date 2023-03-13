@@ -45,7 +45,7 @@ def pick_to_pha(pick, quake):
     return f"  {wid.station_code:<6}  {phase_hint[0]}   {weight}   {pick_offset:5.2f}"
 
 def format_velest(inv):
-    lines = []
+    lines = ["(a6,f7.4,a1,1x,f8.4,a1,1x,i4,1x,i1,1x,i3,1x,f5.2,2x,f5.2)"]
     idx = 259
     for n in inv:
         for s in n.stations:
@@ -113,6 +113,7 @@ def main():
         with open(outfile, "w") as f:
             for l in lines:
                 f.write(f"{l}\n")
+            f.write("\n")
     if args.quakeml:
         quakemlPath = Path(args.quakeml)
         if quakemlPath.exists():
