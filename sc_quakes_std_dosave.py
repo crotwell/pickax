@@ -64,8 +64,13 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
             # deconvolution prefiltering, 10 sec to 45 Hz
             pre_filt = [0.02, 0.1, 45, 50]
             for tr in stream:
-                tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
-                tr.stats["preprocessed"] = True
+                try:
+                    tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
+                    tr.stats["preprocessed"] = True
+                except Exception as e:
+                    print("Warn: unable to remove response for "+tr.id)
+                    tr.stats["preprocessed"] = True
+                    break
 
     # function called on quit, next or prev, allows saving of picks however you wish
     # here we save the quake as QuakeML, which will include the picks, and then
