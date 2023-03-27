@@ -52,6 +52,8 @@ pickax -s JKYD.mseed
 - t: Print current time, amplitude at mouse position
 - v: Go to next data
 - r: Go to previous data
+- V: Skip forward to next quake
+- R: Skip backward to previous quake
 - q: Quit
 - h: Display this help, but you knew that, right?
 
@@ -92,10 +94,10 @@ the original was modified in place.
 # Finish function
 
 The finish function is called whenever the user quits, goes to next or previous,
-ie `q`, `v` or `r`. It is called with four arguments, first is the QuakeML
+ie `q`, `V`, `v`, `R` or `r`. It is called with four arguments, first is the QuakeML
 Event, which contains picks, including both new picks and any existing picks.
 Second is the current stream, useful to get the channel. Third is the command,
-one of "quit", "next", or "prev" and the last is pickax itself.
+one of "quit", "next", "next_quake", "prev" or "prev_quake" and the last is pickax itself.
 
 For next and prev, you generally will call
 `pickax.update_data()` passing in a new stream and optionally
@@ -110,7 +112,7 @@ takes 3 arguments, quake, inventory and stream, similar to the update_data funct
 # utilities
 
 - usgspicks: reload event from USGS by id to load picks as default
-query doesn not include. Likely only works if host is USGS server.
+query does not include picks. Likely only works if host is USGS server.
 
 - mergepicks: merge picks from one or more QuakeML files into another, optionally limiting to author
 

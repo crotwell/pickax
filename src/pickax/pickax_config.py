@@ -23,6 +23,8 @@ DEFAULT_KEYMAP = {
     't': "CURR_MOUSE",
     'v': "GO_NEXT",
     'r': "GO_PREV",
+    'V': "GO_NEXT_QUAKE",
+    'R': "GO_PREV_QUAKE",
     'q': "GO_QUIT",
     'h': "HELP",
 }

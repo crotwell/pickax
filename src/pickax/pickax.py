@@ -232,6 +232,10 @@ class PickAx:
             self.do_finish("next")
         elif self.config.keymap[event.key]  == "GO_PREV":
             self.do_finish("prev")
+        elif self.config.keymap[event.key]  == "GO_NEXT_QUAKE":
+            self.do_finish("next_quake")
+        elif self.config.keymap[event.key]  == "GO_PREV_QUAKE":
+            self.do_finish("prev_quake")
         elif self.config.keymap[event.key]  == "PICK_GENERIC":
             if event.inaxes is not None:
                 self.do_pick(event)

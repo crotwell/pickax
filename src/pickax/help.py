@@ -12,6 +12,8 @@ keymap_desc = {
     'AMP_MODE': "Toggle amplitude scale, indivudual min-max or all on same",
     'GO_NEXT': "Go to next data",
     'GO_PREV': "Go to previous data",
+    "GO_NEXT_QUAKE": "Skip forward to next quake",
+    "GO_PREV_QUAKE": "Skip backward to previous quake",
     'GO_QUIT': "Quit",
     'ZOOM_IN': "Zoom in, first use marks one edge, second zooms in",
     'ZOOM_OUT': "Zoom back out, double time displayed",

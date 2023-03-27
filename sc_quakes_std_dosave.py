@@ -104,12 +104,18 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
         seis = [] # force while to run
         sta = "dummy"
         quake = "dummy"
-        if command == "next":
+        if command == "next" or command == "next_quake":
+            if command == "next_quake":
+                # zip to end of station iterator so next() will go to next quake
+                sta_itr.ending()
             net, sta, quake, seis = seis_itr.next()
             while len(seis) == 0 and sta is not None and quake is not None:
                 print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
                 net, sta, quake, seis = seis_itr.next()
-        elif command == "prev":
+        elif command == "prev" or command == "prev_quake":
+            if command == "prev_quake":
+                # zip to beginning of station iterator so prev() will go to previous quake
+                sta_itr.beginning()
             net, sta, quake, seis = seis_itr.prev()
             while len(seis) == 0 and sta is not None and quake is not None:
                 print(f"No data for {net.code}_{sta.code} for event {quake.preferred_origin().time}...")
