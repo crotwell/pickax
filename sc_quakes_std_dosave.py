@@ -59,17 +59,20 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
 
     # helper function, perhaps to preprocess the stream before picking
     def preprocess(stream, inv):
-        if "preprocessed" not in stream[0].stats:
+        PREPROC_KEY = "preprocessed"
+        if PREPROC_KEY not in stream[0].stats:
             stream.detrend()
             # deconvolution prefiltering, 10 sec to 45 Hz
             pre_filt = [0.02, 0.1, 45, 50]
             for tr in stream:
                 try:
-                    tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
-                    tr.stats["preprocessed"] = True
+                    if PREPROC_KEY not in tr.stats or not tr.stats[PREPROC_KEY]:
+                        tr.remove_sensitivity(inv)
+                        #tr.remove_response(inventory=inv, pre_filt=pre_filt, output="VEL", water_level=None)
+                        tr.stats[PREPROC_KEY] = True
                 except Exception as e:
                     print("Warn: unable to remove response for "+tr.id)
-                    tr.stats["preprocessed"] = True
+                    tr.stats[PREPROC_KEY] = True
                     break
 
     # function called on quit, next or prev, allows saving of picks however you wish

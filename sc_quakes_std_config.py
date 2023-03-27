@@ -14,10 +14,10 @@ from pickax import (
 from obspy import Catalog
 
 # create a few filters, will be able to toggle between them with the 'f' key
-def bpfilter(original_stream, current_stream, prevFilter, idx):
+def bpfilter(original_stream, current_stream, prevFilter, idx, inv, quake):
     return original_stream.filter('bandpass', freqmin=1, freqmax=10.0, corners=1, zerophase=True)
 
-def hpfilter(original_stream, current_stream, prevFilter, idx):
+def hpfilter(original_stream, current_stream, prevFilter, idx, inv, quake):
     return original_stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
 def createStandardConfig(author=None):
