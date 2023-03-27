@@ -39,6 +39,7 @@ def do_parseargs():
 
 def main():
     print("Hi PickAx!")
+    print(f"Version: {__version__}")
     print("'h' in the display window will show key help.")
     args = do_parseargs()
     if args.version:
