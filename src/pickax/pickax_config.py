@@ -25,6 +25,8 @@ DEFAULT_KEYMAP = {
     'r': "GO_PREV",
     'V': "GO_NEXT_QUAKE",
     'R': "GO_PREV_QUAKE",
+    '*': "LIST_QUAKES",
+    '^': "LIST_STATIONS",
     'q': "GO_QUIT",
     'h': "HELP",
 }
@@ -50,6 +52,7 @@ class PickAxConfig:
         self.author_colors = {}
         self.titleFn = default_titleFn
         self.finishFn = None
+        self.seismogram_itr = None
         self.creation_info = None
         self.resource_prefix="smi:pickax"
         self.filters = []

@@ -56,6 +56,8 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     seis_itr = ThreeAtATime(seis_itr)
     # cache make prev/next a bit faster if data is already here
     seis_itr = CacheSeismogramIterator(seis_itr)
+    if config is not None:
+        config.seismogram_itr = seis_itr
 
     # helper function, perhaps to preprocess the stream before picking
     def preprocess(stream, inv):

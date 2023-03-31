@@ -25,6 +25,8 @@ class QuakeIterator(ABC):
     @abstractmethod
     def beginning(self):
         pass
+    def all(self):
+        return None
 
 class QuakeMLFileIterator(QuakeIterator):
     def __init__(self, file):
@@ -45,6 +47,8 @@ class QuakeMLFileIterator(QuakeIterator):
         return self.quakes[self.batch_idx]
     def beginning(self):
         self.batch_idx = -1
+    def all(self):
+        return self.quakes
 
 class FDSNQuakeIterator(QuakeIterator):
     def __init__(self, query_params, days_step=30, dc_name="USGS", debug=False):
@@ -64,6 +68,7 @@ class FDSNQuakeIterator(QuakeIterator):
             self._client = Client(self.dc_name, _discover_services=False, debug=self.debug)
         return self._client
     def next_batch(self):
+        # careful if implement batching, as all() will be wrong in that case?
         try:
             return self.client.get_events(**self.query_params)
         except FDSNNoDataException:
@@ -103,6 +108,8 @@ class FDSNQuakeIterator(QuakeIterator):
         return self.quakes[self.batch_idx]
     def beginning(self):
         self.batch_idx = -1
+    def all(self):
+        return self.quakes
 
 class CachedPicksQuakeItr(QuakeIterator):
     def __init__(self, quake_itr, cachedir='by_eventid'):
@@ -129,3 +136,5 @@ class CachedPicksQuakeItr(QuakeIterator):
             pick_quake = read_events(qpath)[0]
             merge_picks_to_quake(pick_quake, quake)
         return quake
+    def all(self):
+        return self.quake_itr.all()

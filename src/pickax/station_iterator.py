@@ -17,6 +17,8 @@ class StationIterator(ABC):
         pass
     def ending(self):
         pass
+    def all_stations(self):
+        return None
 
 class StationXMLIterator(StationIterator):
     def __init__(self, inv, debug=False):
@@ -56,6 +58,12 @@ class StationXMLIterator(StationIterator):
         for n in self.inv.networks:
             count += len(n.stations)
         return count
+    def all_stations(self):
+        all_sta = []
+        for n in self.inv.networks:
+            for s in n.stations:
+                all_sta.append(s)
+        return all_sta
 
 
 class StationXMLFileIterator(StationXMLIterator):

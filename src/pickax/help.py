@@ -14,6 +14,8 @@ keymap_desc = {
     'GO_PREV': "Go to previous data",
     "GO_NEXT_QUAKE": "Skip forward to next quake",
     "GO_PREV_QUAKE": "Skip backward to previous quake",
+    "LIST_QUAKES": "List quakes, if the iterator allows",
+    "LIST_STATIONS": "List stations, if the iterator allows",
     'GO_QUIT': "Quit",
     'ZOOM_IN': "Zoom in, first use marks one edge, second zooms in",
     'ZOOM_OUT': "Zoom back out, double time displayed",

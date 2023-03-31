@@ -8,6 +8,11 @@ from obspy import Stream
 
 
 class SeismogramIterator(ABC):
+    """
+    Seismogram iterator that can move to next or previous.
+    Optionally, may provide access to station and quake iterators, if used
+    internally.
+    """
     def __init__(self):
         self.__empty__ = None, None, None, []
     @abstractmethod
@@ -16,6 +21,10 @@ class SeismogramIterator(ABC):
     @abstractmethod
     def prev(self):
         return self.__empty__
+    def quake_iterator(self):
+        return None
+    def station_iterator(self):
+        return None
 
 class CacheSeismogramIterator(SeismogramIterator):
     """
@@ -44,6 +53,10 @@ class CacheSeismogramIterator(SeismogramIterator):
         else:
             self.__curr_data__ = self.sub_itr.prev()
         return self.__curr_data__
+    def quake_iterator(self):
+        return self.sub_itr.quake_iterator()
+    def station_iterator(self):
+        return self.sub_itr.station_iterator()
 
 
 class FDSNSeismogramIterator(SeismogramIterator):
@@ -95,6 +108,10 @@ class FDSNSeismogramIterator(SeismogramIterator):
         if sta is None or self.curr_quake is None:
             return self.__empty__
         return self.__load_seismograms__(net, sta, self.curr_quake, self.query_params)
+    def quake_iterator(self):
+        return self.quake_itr
+    def station_iterator(self):
+        return self.station_itr
     def __load_seismograms__(self, net, sta, quake, query_params={}):
         if len(sta.channels) == 0:
             return []
@@ -185,3 +202,7 @@ class ThreeAtATime(SeismogramIterator):
             return self.cur_net, self.cur_sta, self.cur_quake, self.sub_waveforms[self.sub_idx]
         else:
             return self.cur_net, self.cur_sta, self.cur_quake, []
+    def quake_iterator(self):
+        return self.sub_itr.quake_iterator()
+    def station_iterator(self):
+        return self.sub_itr.station_iterator()
