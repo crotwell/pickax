@@ -128,7 +128,7 @@ def main():
         outfile = Path(outdir / f"{quakemlPath.stem}.pha")
         with open(outfile, "w") as phsfile:
             for idx, quake in enumerate(catalog):
-                phsfile.write(f"{qml_to_phs_header(quake, idx+1)}\n")
+                any_picks_at_all = False
                 pick_idx = 0
                 for pick in quake.picks:
                     if pick.phase_hint == "pick":
@@ -136,9 +136,13 @@ def main():
                     if args.authors is None or len(args.authors) == 0 \
                             or pick.creation_info.author in args.authors \
                             or pick.creation_info.agency_id in args.authors:
+                        if not any_picks_at_all:
+                            any_picks_at_all = True
+                            phsfile.write(f"{qml_to_phs_header(quake, idx+1)}\n")
                         phsfile.write(f"{pick_to_pha(pick, quake)}\n")
                         pick_idx+=1
-                phsfile.write("\n")
+                if any_picks_at_all:
+                    phsfile.write("\n")
         if args.invws:
             inv = inventory_for_catalog_picks(catalog, args.authors)
             outfile = Path(outdir / f"pick_channels.staxml")
