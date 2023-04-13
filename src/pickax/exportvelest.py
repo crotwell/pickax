@@ -21,7 +21,9 @@ def lonToEW(lon):
         lon = abs(lon)
     return lon, lonC
 def qml_to_phs_header(quake, index):
-    mag = quake.preferred_magnitude().mag
+    mag = 0.0
+    if quake.preferred_magnitude() is not None:
+        mag = quake.preferred_magnitude().mag
     origin = quake.preferred_origin()
     otime = origin.time
     ymdhm = otime.strftime("%y%m%d %H%M")
