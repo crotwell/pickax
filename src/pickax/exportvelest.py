@@ -60,7 +60,7 @@ def format_velest(inv):
 
 def do_parseargs():
     parser = argparse.ArgumentParser(
-        description="Create REAL input files."
+        description="Create VELEST input files."
     )
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"
