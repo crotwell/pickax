@@ -262,3 +262,14 @@ def inventory_for_catalog_picks(catalog, window=600, client=None, host="IRIS", d
     if client is None:
         client = Client(host, _discover_services=False, debug=debug)
     return client.get_stations_bulk(wid_list, level="channel", )
+
+def station_for_pick(pick, inventory):
+    wid = pick.waveform_id
+    if wid.network_code is None or wid.station_code is None:
+        return None
+    for n in inventory.networks:
+        if n.code == wid.network_code:
+            for s in n.stations:
+                if s.code == wid.station_code:
+                    return s
+    return None
