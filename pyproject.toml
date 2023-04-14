@@ -36,3 +36,4 @@ dependencies = [
     "hypoinverse" = "pickax.hypoinverse:main"
     "exportreal" = "pickax.exportreal:main"
     "exportvelest" = "pickax.exportvelest:main"
+    "exportdistaz" = "pickax.exportdistaz:main"
