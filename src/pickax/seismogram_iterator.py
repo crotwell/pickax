@@ -122,7 +122,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
         dist_deg = locations2degrees(sta.latitude, sta.longitude, origin.latitude, origin.longitude)
         s_time = origin.time + self.start_offset
         if self.start_phases != "origin":
-            arrivals = model.get_travel_times(source_depth_in_km=origin.depth/1000,
+            arrivals = self.taup_model.get_travel_times(source_depth_in_km=origin.depth/1000,
                                       distance_in_degree=dist_deg,
                                       phase_list=self.start_phases.split(","))
             if len(arrivals) == 0:
@@ -130,7 +130,7 @@ class FDSNSeismogramIterator(SeismogramIterator):
             s_time = s_time + arrivals[0].time
         e_time = origin.time + self.end_offset
         if self.end_phases != "origin":
-            arrivals = model.get_travel_times(source_depth_in_km=origin.depth/1000,
+            arrivals = self.taup_model.get_travel_times(source_depth_in_km=origin.depth/1000,
                                       distance_in_degree=dist_deg,
                                       phase_list=self.end_phases.split(","))
             if len(arrivals) == 0:
