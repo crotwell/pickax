@@ -3,7 +3,7 @@ from collections import deque
 from obspy.clients.fdsn import Client
 from obspy.taup import TauPyModel
 from obspy.geodetics import locations2degrees
-from obspy.clients.fdsn.header import FDSNNoDataException
+from obspy.clients.fdsn.header import FDSNNoDataException, FDSNBadRequestException
 from obspy import Stream
 
 
@@ -141,9 +141,16 @@ class FDSNSeismogramIterator(SeismogramIterator):
         for c in sta.channels:
             locs.add(c.location_code)
             chans.add(c.code)
+
         waveforms = None
         try:
-            waveforms = client.get_waveforms(net.code, sta.code, ",".join(locs), ",".join(chans), s_time, e_time)
+            locstr = ",".join(locs)
+            chanstr = ",".join(chans)
+            if e_time > s_time:
+                waveforms = client.get_waveforms(net.code, sta.code, locstr, chanstr, s_time, e_time)
+            else:
+                print(f"WARN: start time for request after end time, skipping: {net.code} {sta.code} {locstr} {chanstr} {s_time} {e_time}")
+                waveforms = Stream()
         except FDSNNoDataException:
             waveforms = Stream()
         return net, sta, quake, waveforms
