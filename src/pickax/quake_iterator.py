@@ -50,6 +50,45 @@ class QuakeMLFileIterator(QuakeIterator):
     def all(self):
         return self.quakes
 
+
+class QuakeMLDirectoryIterator(QuakeIterator):
+    """
+    Looks for QuakeML files like *.qml and iterates the quakes in
+    each file.
+    """
+    def __init__(self, dir, pattern="**/*.qml"):
+        self.root_dir = Path(dir)
+        self.pattern = pattern
+        self.qmlfiles = list(root_dir.glob(pattern))
+
+        self.quakes = Catalog()
+        self.q_to_dir = dict()
+        for file in self.qmlfiles:
+            dir_quakes = read_events(file)
+            self.quakes.extend(dir_quakes)
+            for q in dir_quakes:
+                self.q_to_dir[q.resource_id] = file
+        self.batch_idx = -1
+    def next(self):
+        self.batch_idx += 1
+        if self.batch_idx >= len(self.quakes):
+            #self.next_batch()
+            return None
+        quake = self.quakes[self.batch_idx]
+        return quake
+    def prev(self):
+        self.batch_idx -= 1
+        if self.batch_idx < 0:
+            self.batch_idx = -1
+            return None
+        return self.quakes[self.batch_idx]
+    def beginning(self):
+        self.batch_idx = -1
+    def all(self):
+        return self.quakes
+    def quakedir(self, quake):
+        return self.q_to_dir[quake.resource_id]
+
 class FDSNQuakeIterator(QuakeIterator):
     def __init__(self, query_params, days_step=30, dc_name="USGS", debug=False):
         self.debug = debug

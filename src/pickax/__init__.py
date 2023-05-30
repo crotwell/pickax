@@ -25,12 +25,14 @@ from .station_iterator import (
     StationXMLIterator,
     FDSNStationIterator,
     StationXMLFileIterator,
+    StationXMLDirectoryIterator
     )
 from .seismogram_iterator import (
     SeismogramIterator,
     FDSNSeismogramIterator,
     ThreeAtATime,
     CacheSeismogramIterator,
+    MDLSeismogramIterator
     )
 from .hypoinverse import format_hypoinverse
 from .eqtransform import read_eqt_csv

@@ -1,10 +1,14 @@
 from abc import ABC, abstractmethod
 from collections import deque
+from obspy.core.stream import read as obspyread
 from obspy.clients.fdsn import Client
 from obspy.taup import TauPyModel
 from obspy.geodetics import locations2degrees
 from obspy.clients.fdsn.header import FDSNNoDataException, FDSNBadRequestException
 from obspy import Stream
+from pathlib import Path
+from .station_iterator import channel_from_sac, StationXMLDirectoryIterator
+from .quake_iterator import QuakeMLFileIterator
 
 
 class SeismogramIterator(ABC):
@@ -25,6 +29,70 @@ class SeismogramIterator(ABC):
         return None
     def station_iterator(self):
         return None
+
+class MDLSeismogramIterator(SeismogramIterator):
+    """
+    Seismogram iterator over a obspy mass downloader directory.
+    """
+    def __init__(self, mdl_dir, mseed_storage = "waveforms", stationxml_storage = "stations", quakeml="*.qml"):
+        self.__empty__ = None, None, None, []
+        self.mdl_dir = Path(mdl_dir)
+        self.mseed_dir = Path(self.mdl_dir, mseed_storage)
+        quakeml_list = list(self.mdl_dir.glob(quakeml))
+        if len(quakeml_list) != 1:
+            print(f"expected one quakeml file but found {len(quakeml_list)} in {mdl_dir} for {quakeml}")
+        self.quakeml = quakeml_list[0]
+        self.quake_itr = QuakeMLFileIterator(self.quakeml)
+        self.curr_quake = self.quake_itr.next()
+        self.station_itr = StationXMLDirectoryIterator(self.mdl_dir, f"{stationxml_storage}/*.xml")
+        self.idx = -1
+
+    def next(self):
+        if self.curr_quake is None:
+            return self.__empty__
+        net, sta = self.station_itr.next()
+        if sta is None:
+            quake = self.quake_itr.next()
+            if quake is None:
+                return self.__empty__
+            self.curr_quake = quake
+            self.station_itr.beginning()
+            net, sta = self.station_itr.next()
+        if sta is None or self.curr_quake is None:
+            return self.__empty__
+        return self.__load_seismograms__(net, sta, self.curr_quake)
+    def prev(self):
+        if self.curr_quake is None:
+            return self.__empty__
+        net, sta = self.station_itr.prev()
+        if sta is None:
+            self.curr_quake = self.quake_itr.prev()
+            self.station_itr.ending()
+            net, sta = self.station_itr.prev()
+            if self.curr_quake is None:
+                return self.__empty__
+
+        if sta is None or self.curr_quake is None:
+            return self.__empty__
+        return self.__load_seismograms__(net, sta, self.curr_quake)
+    def quake_iterator(self):
+        return self.quake_itr
+    def station_iterator(self):
+        return self.station_itr
+    def __load_seismograms__(self, net, sta, quake, query_params={}):
+        print(f"search in {self.mseed_dir} for {net.code}.{sta.code}.*__*__*.mseed")
+        mseed_list = list(self.mseed_dir.glob(f"{net.code}.{sta.code}.*__*__*.mseed"))
+        waveforms = Stream()
+        for mseedfile in mseed_list:
+            st = obspyread(mseedfile, format="MSEED")
+            if st is not None:
+                waveforms += st
+        return net, sta, quake, waveforms
+    def quake_iterator(self):
+        return self.quake_itr
+    def station_iterator(self):
+        return self.station_itr
+
 
 class CacheSeismogramIterator(SeismogramIterator):
     """

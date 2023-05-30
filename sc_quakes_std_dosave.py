@@ -19,14 +19,15 @@ from pickax import (
     )
 from obspy import Catalog, read_events, Inventory
 
+
 def create_dosaveFn(quake_query_params, station_query_params, seis_params, config=None, picks_file="picks_sc_quakes.qml"):
     if config is None:
         config = PickAxConfig()
     # Load stations, events and seismograms
-    print(f"Load station metadata...")
-    if isinstance(station_query_params, StationIterator):
+    if station_query_params is None:
+        sta_itr = None
+    elif isinstance(station_query_params, StationIterator):
         sta_itr = station_query_params
-
     elif isinstance(station_query_params, Inventory):
         sta_itr = StationXMLIterator(station_query_params)
     elif isinstance(station_query_params, (str, os.PathLike)):
@@ -35,20 +36,26 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     else:
         # this loads stations/channels from remote server
         sta_itr = FDSNStationIterator(station_query_params, debug=config.debug)
-    print(f"Networks: {len(sta_itr.inv.networks)}, Stations: {len(sta_itr)}")
-    print(f"Load earthquakes...")
-    if isinstance(quake_query_params, QuakeIterator):
-        quake_itr = quake_query_params
+
+    if quake_query_params is None:
+        quake_itr = None
+    elif isinstance(quake_query_params, QuakeIterator):
+        quake_itr = CachedPicksQuakeItr(quake_query_params, cachedir="../by_eventid")
     elif isinstance(quake_query_params, (str, os.PathLike)):
         # this loads from local file
         quake_itr = CachedPicksQuakeItr(QuakeMLFileIterator(quake_query_params), cachedir="../by_eventid")
     else:
         # this loads quakes from remote server
         quake_itr = FDSNQuakeIterator(quake_query_params, debug=config.debug)
-    print(f"Number of quakes: {len(quake_itr.quakes)}")
 
     if isinstance(seis_params, SeismogramIterator):
         seis_itr = seis_params
+        if quake_itr is None:
+            quake_itr = seis_itr.quake_iterator()
+            print(f"Set quake_itr from seis_itr: {quake_itr}")
+        if sta_itr is None:
+            sta_itr = seis_itr.station_iterator()
+            print(f"Set sta_itr from seis_itr: {sta_itr}")
     else:
         seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, debug=config.debug, **seis_params)
     # use ThreeAtATime to separate by band/inst code, ie seismometer then strong motion
@@ -58,6 +65,15 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
     seis_itr = CacheSeismogramIterator(seis_itr)
     if config is not None:
         config.seismogram_itr = seis_itr
+
+    print(f"Load station metadata...")
+    try:
+        print(f"Networks: {len(sta_itr.inv.networks)}, Stations: {len(sta_itr)}")
+    except AttributeError:
+        print("catch AttributeError")
+        print(f"Networks: -, Stations: -")
+    print(f"Load earthquakes...")
+    print(f"Number of quakes: {len(quake_itr.quakes)}")
 
     # helper function, perhaps to preprocess the stream before picking
     def preprocess(stream, inv):
@@ -84,7 +100,11 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
         saved_catalog = None
         # set overall inventory if not already set
         if pickax.inventory is None:
-            pickax.inventory = sta_itr.inv
+            try:
+                pickax.inventory = sta_itr.inv
+            except AttributeError:
+                print("catch AttributeError")
+                pickax.inventory = None
         # first time through qmlevent will be None and stream will be empty
         if qmlevent is not None and len(stream) != 0:
             # save new picks to picks_file
@@ -102,6 +122,7 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
                 saved_catalog.events.remove(same_quake)
             merge_picks_to_catalog(qmlevent, saved_catalog)
             saved_catalog.write(picks_file, format='QUAKEML')
+            #saved_catalog.write("hypodd.pha", format='HYPODDPHA')
 
         seis = [] # force while to run
         sta = "dummy"
@@ -130,6 +151,14 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
             print(f"No more to do...")
             pickax.close()
         elif sta is not None and quake is not None:
+            # set overall inventory if not already set
+            if pickax.inventory is None:
+                try:
+                    pickax.inventory = seis_itr.station_itr.inv
+                except AttributeError:
+                    print("catch AttributeError")
+                    pickax.inventory = None
+
             # check to see if any old saved quakes from same event
 
             if saved_catalog is None:
@@ -143,7 +172,12 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
 
             all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
             print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
-            preprocess(seis, sta_itr.inv)
+            inv = pickax.inventory
+            if inv is None:
+                inv = Catalog(networks = [ net ])
+            #preprocess(seis, inv)
+            print("after preprocess")
+
             # could update both stream and Qml Event
             # pickax.update_data(st, catalog[0])
             # or just the stream if the event is the same

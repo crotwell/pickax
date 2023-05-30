@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from obspy.clients.fdsn import Client
 from obspy import Inventory, read_inventory
 from obspy.clients.fdsn.header import FDSNNoDataException
+from pathlib import Path
 
 
 class StationIterator(ABC):
@@ -86,3 +87,49 @@ class FDSNStationIterator(StationXMLIterator):
             return client.get_stations(**self.query_params)
         except FDSNNoDataException:
             return Inventory()
+
+class StationXMLDirectoryIterator(StationXMLIterator):
+    def __init__(self, dir, pattern="**/*.xml"):
+        self.root_dir = Path(dir)
+        self.pattern = pattern
+        self.stamlfiles = list(self.root_dir.glob(pattern))
+        self.curr_itr = None
+        self.idx = -1
+        self.net = None
+        self.sta = None
+    def next(self):
+        net = None
+        sta = None
+        while sta is None and self.idx < len(self.stamlfiles):
+            if self.curr_itr is None:
+                self.idx += 1
+                if self.idx < len(self.stamlfiles):
+                    self.curr_itr = StationXMLFileIterator(self.stamlfiles[self.idx])
+                else:
+                    break
+            net, sta = self.curr_itr.next()
+            if sta is None:
+                self.curr_itr = None
+            else:
+                self.inv = self.curr_itr.inv
+        return net, sta
+    def prev(self):
+        net = None
+        sta = None
+        while sta is None and self.idx > 0:
+            if self.curr_itr is None:
+                self.idx -= 1
+                self.curr_itr = StationXMLFileIterator(self.stamlfiles[self.idx])
+            net, sta = self.curr_itr.prev()
+            if sta is None:
+                self.curr_itr = None
+        return net, sta
+    def beginning(self):
+        self.idx = -1
+        self.curr_itr = None
+    def ending(self):
+        net = None
+        sta = None
+        self.idx = len(self.stamlfiles)-1
+        self.curr_itr = StationXMLFileIterator(self.stamlfiles[self.idx])
+        self.curr_itr.ending()
