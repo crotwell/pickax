@@ -172,16 +172,19 @@ def create_dosaveFn(quake_query_params, station_query_params, seis_params, confi
 
             all_chan = ",".join(list(map(lambda tr: tr.stats.channel, seis)))
             print(f"{len(seis)} {net.code}_{sta.code} {all_chan} {quake.preferred_origin().time}")
-            inv = pickax.inventory
+            inv = seis_itr.station_iterator().inv
             if inv is None:
                 inv = Catalog(networks = [ net ])
+            if inv is None:
+                # keep the old inv?
+                inv = pickax.inventory
             #preprocess(seis, inv)
             print("after preprocess")
 
             # could update both stream and Qml Event
             # pickax.update_data(st, catalog[0])
             # or just the stream if the event is the same
-            pickax.update_data(seis, quake)
+            pickax.update_data(seis, quake, inventory=inv)
         else:
             print(f"close as {sta is None} {quake is None}")
             pickax.close()
