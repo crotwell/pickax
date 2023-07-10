@@ -133,3 +133,22 @@ class StationXMLDirectoryIterator(StationXMLIterator):
         self.idx = len(self.stamlfiles)-1
         self.curr_itr = StationXMLFileIterator(self.stamlfiles[self.idx])
         self.curr_itr.ending()
+
+def channel_from_sac(tr):
+    lat = 0
+    lon = 0
+    elev = 0
+    depth = 0
+    az = 0
+    dip = 0
+    if sac in tr.stats:
+        lat = tr.stats.sac['stla']
+        lon = tr.stats.sac['stlo']
+        elev = tr.stats.sac['stel']
+        az = tr.stats.sac['cmpaz']
+        dip = -1*tr.stats.sac['cmpinc']
+
+    channel = Channel(tr.channel, tr.location, lat, lon, elev, depth, azimuth=az, dip=dip, sample_rate=tr.sample_rate)
+    station = Station(tr.station, lat, lon, elev, channels = [ channel ])
+    network = Network(tr.network, stations=[ station ])
+    return network
