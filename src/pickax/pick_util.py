@@ -281,8 +281,13 @@ def picks_by_author(pick_list, author):
                 pick.creation_info.author == author \
                 or pick.creation_info.agency_id == author]
 
-def best_pick_at_station(pick_list, p_s, station_id, author_list=[], inst_list=DEF_INST_LIST):
-    all_picks = [pick for pick in pick_list if pick.phase_hint == p_s]
+def best_pick_at_station(pick_list, p_s, station_id, quake, author_list=[], inst_list=DEF_INST_LIST):
+    all_picks = []
+    for pick in pick_list:
+        a = arrival_for_pick(pick, quake)
+        pname = a.phase if a is not None and a.phase is not None else pick.phase_hint
+        if pname == p_s:
+            all_picks.append(pick)
     all_picks = [p for p in all_picks if \
                  station_id == f"{p.waveform_id.network_code}.{p.waveform_id.station_code}"]
     if len(author_list) != 0:

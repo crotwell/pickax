@@ -39,7 +39,9 @@ def main():
         for in_quake in in_catalog:
             print(in_quake.short_str())
             for pick in in_quake.picks:
-                if args.author is None or pick.creation_info.author == args.author:
+                if args.author is None \
+                or pick.creation_info.author == args.author \
+                or pick.creation_info.agency_id == args.author:
                     print(f"    {pick_to_string(pick, in_quake)}")
 
 if __name__ == "__main__":

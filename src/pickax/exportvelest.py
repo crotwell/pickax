@@ -35,9 +35,9 @@ def qml_to_phs_header(quake):
     lat, latC = latToNS(origin.latitude)
     lon, lonC = lonToEW(origin.longitude)
     depth = origin.depth/1000
-    if depth == 0:
+    if depth < 0.01:
         depth = 0.01 # velest never iterates if depth is 0
-    return f"{ymdhm} {osec:5.2f} {lat:<7.4f}{latC} {lon:>8.4f}{lonC} {(origin.depth/1000):>7.2f}  {mag:5.2f}"
+    return f"{ymdhm} {osec:5.2f} {lat:<7.4f}{latC} {lon:>8.4f}{lonC} {(depth):>7.2f}  {mag:5.2f}"
 
 def pick_to_pha(pick, quake):
     weight = "1"
@@ -150,10 +150,10 @@ def main():
                     all_station_ids.add(staId)
                 out_picks = []
                 for staId in all_station_ids:
-                    p_pick = best_pick_at_station(all_picks, "P", staId, args.authors) # def inst code H,N
+                    p_pick = best_pick_at_station(all_picks, "P", staId, quake, args.authors) # def inst code H,N
                     if p_pick is not None:
                         out_picks.append(p_pick)
-                    s_pick = best_pick_at_station(all_picks, "S", staId, args.authors) # def inst code H,N
+                    s_pick = best_pick_at_station(all_picks, "S", staId, quake, args.authors) # def inst code H,N
                     if s_pick is not None:
                         out_picks.append(s_pick)
 
@@ -162,7 +162,7 @@ def main():
                     for pick in out_picks:
                         phsfile.write(f"{pick_to_pha(pick, quake)}\n")
                     phsfile.write("\n")
-                print(f"{len(out_picks)} for {quake.preferred_origin().time}")
+                print(f"{len(out_picks)} picks used for {quake.preferred_origin().time}")
         if args.invws:
             inv = inventory_for_catalog_picks(catalog, args.authors)
             outfile = Path(outdir / f"pick_channels.staxml")
