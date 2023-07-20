@@ -6,7 +6,11 @@ import os
 from pathlib import Path
 import argparse
 from obspy import read_events, Catalog, read_inventory, Inventory
-from .pick_util import inventory_for_catalog_picks, arrival_for_pick
+from .pick_util import (
+    inventory_for_catalog_picks,
+    arrival_for_pick,
+    best_pick_at_station
+)
 
 def latToNS(lat):
     latC = "N"
@@ -20,7 +24,7 @@ def lonToEW(lon):
         lonC = "W"
         lon = abs(lon)
     return lon, lonC
-def qml_to_phs_header(quake, index):
+def qml_to_phs_header(quake):
     mag = 0.0
     if quake.preferred_magnitude() is not None:
         mag = quake.preferred_magnitude().mag
@@ -30,6 +34,9 @@ def qml_to_phs_header(quake, index):
     osec = otime.second+ (otime.microsecond/1000000)
     lat, latC = latToNS(origin.latitude)
     lon, lonC = lonToEW(origin.longitude)
+    depth = origin.depth/1000
+    if depth == 0:
+        depth = 0.01 # velest never iterates if depth is 0
     return f"{ymdhm} {osec:5.2f} {lat:<7.4f}{latC} {lon:>8.4f}{lonC} {(origin.depth/1000):>7.2f}  {mag:5.2f}"
 
 def pick_to_pha(pick, quake):
@@ -131,20 +138,31 @@ def main():
         with open(outfile, "w") as phsfile:
             for idx, quake in enumerate(catalog):
                 any_picks_at_all = False
-                pick_idx = 0
-                for pick in quake.picks:
-                    if pick.phase_hint == "pick":
-                        continue
-                    if args.authors is None or len(args.authors) == 0 \
-                            or pick.creation_info.author in args.authors \
-                            or pick.creation_info.agency_id in args.authors:
-                        if not any_picks_at_all:
-                            any_picks_at_all = True
-                            phsfile.write(f"{qml_to_phs_header(quake, idx+1)}\n")
+                all_picks = quake.picks[:]
+                all_picks = [pick for pick in all_picks if pick.phase_hint != "pick"]
+                if not (args.authors is None or len(args.authors) == 0):
+                    all_picks = [pick for pick in all_picks if \
+                                 pick.creation_info.author in args.authors \
+                                 or pick.creation_info.agency_id in args.authors]
+                all_station_ids = set()
+                for pick in all_picks:
+                    staId = f"{pick.waveform_id.network_code}.{pick.waveform_id.station_code}"
+                    all_station_ids.add(staId)
+                out_picks = []
+                for staId in all_station_ids:
+                    p_pick = best_pick_at_station(all_picks, "P", staId, args.authors) # def inst code H,N
+                    if p_pick is not None:
+                        out_picks.append(p_pick)
+                    s_pick = best_pick_at_station(all_picks, "S", staId, args.authors) # def inst code H,N
+                    if s_pick is not None:
+                        out_picks.append(s_pick)
+
+                if len(out_picks) > 0:
+                    phsfile.write(f"{qml_to_phs_header(quake)}\n")
+                    for pick in out_picks:
                         phsfile.write(f"{pick_to_pha(pick, quake)}\n")
-                        pick_idx+=1
-                if any_picks_at_all:
                     phsfile.write("\n")
+                print(f"{len(out_picks)} for {quake.preferred_origin().time}")
         if args.invws:
             inv = inventory_for_catalog_picks(catalog, args.authors)
             outfile = Path(outdir / f"pick_channels.staxml")

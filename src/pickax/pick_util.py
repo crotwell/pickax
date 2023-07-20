@@ -273,3 +273,31 @@ def station_for_pick(pick, inventory):
                 if s.code == wid.station_code:
                     return s
     return None
+
+DEF_INST_LIST = ["H", "N"]
+
+def picks_by_author(pick_list, author):
+    return [pick for pick in pick_list if \
+                pick.creation_info.author == author \
+                or pick.creation_info.agency_id == author]
+
+def best_pick_at_station(pick_list, p_s, station_id, author_list=[], inst_list=DEF_INST_LIST):
+    all_picks = [pick for pick in pick_list if pick.phase_hint == p_s]
+    all_picks = [p for p in all_picks if \
+                 station_id == f"{p.waveform_id.network_code}.{p.waveform_id.station_code}"]
+    if len(author_list) != 0:
+        for au in author_list:
+            au_picks = picks_by_author(all_picks, au)
+            if len(au_picks) > 0:
+                for inst in inst_list:
+                    inst_picks = [pick for pick in au_picks if pick.waveform_id.channel_code[1] == inst]
+                    if len(inst_picks) != 0:
+                        return inst_picks[0]
+        # didn't find by author, so none?
+        return None
+    else:
+        for inst in inst_list:
+            inst_picks = [pick for pick in all_picks if pick.waveform_id.channel_code[1] == inst]
+            if len(inst_picks) != 0:
+                return inst_picks[0]
+    return None
