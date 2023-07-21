@@ -83,6 +83,7 @@ def do_parseargs():
         "--authors",
         nargs='*',
         required=False,
+        default=[],
         help="Authors of picks to pull from QuakeML file",
     )
     parser.add_argument(
@@ -102,6 +103,9 @@ def do_parseargs():
         "--dir",
         required=False,
         help="directory to save to",
+    )
+    parser.add_argument(
+        "--failduplicate", help="fail if there are duplicate picks satisfying the criteria in the QuakeML file", action="store_true"
     )
     return parser.parse_args()
 
@@ -150,10 +154,14 @@ def main():
                     all_station_ids.add(staId)
                 out_picks = []
                 for staId in all_station_ids:
-                    p_pick = best_pick_at_station(all_picks, "P", staId, quake, args.authors) # def inst code H,N
+                    p_pick = best_pick_at_station(all_picks, "P", staId, quake,
+                                                  args.authors,
+                                                  check_unique=args.failduplicate) # def inst code H,N
                     if p_pick is not None:
                         out_picks.append(p_pick)
-                    s_pick = best_pick_at_station(all_picks, "S", staId, quake, args.authors) # def inst code H,N
+                    s_pick = best_pick_at_station(all_picks, "S", staId,
+                                                  quake, args.authors,
+                                                  check_unique=args.failduplicate) # def inst code H,N
                     if s_pick is not None:
                         out_picks.append(s_pick)
 

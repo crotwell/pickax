@@ -281,7 +281,10 @@ def picks_by_author(pick_list, author):
                 pick.creation_info.author == author \
                 or pick.creation_info.agency_id == author]
 
-def best_pick_at_station(pick_list, p_s, station_id, quake, author_list=[], inst_list=DEF_INST_LIST):
+def best_pick_at_station(pick_list, p_s, station_id, quake,
+                         author_list=[],
+                         inst_list=DEF_INST_LIST,
+                         check_unique=False):
     all_picks = []
     for pick in pick_list:
         a = arrival_for_pick(pick, quake)
@@ -294,15 +297,40 @@ def best_pick_at_station(pick_list, p_s, station_id, quake, author_list=[], inst
         for au in author_list:
             au_picks = picks_by_author(all_picks, au)
             if len(au_picks) > 0:
-                for inst in inst_list:
-                    inst_picks = [pick for pick in au_picks if pick.waveform_id.channel_code[1] == inst]
-                    if len(inst_picks) != 0:
-                        return inst_picks[0]
+                pick = best_instrument_pick(au_picks,
+                                            station_id,
+                                            inst_list=DEF_INST_LIST,
+                                            check_unique=check_unique)
+                if pick is not None:
+                    return pick
         # didn't find by author, so none?
         return None
     else:
-        for inst in inst_list:
-            inst_picks = [pick for pick in all_picks if pick.waveform_id.channel_code[1] == inst]
-            if len(inst_picks) != 0:
-                return inst_picks[0]
-    return None
+        return best_instrument_pick(all_picks,
+                                    station_id,
+                                    inst_list=DEF_INST_LIST,
+                                    check_unique=check_unique)
+
+def best_instrument_pick(pick_list,
+                         station_id,
+                         inst_list=DEF_INST_LIST,
+                         check_unique=False):
+    """
+    Finds pick on best (first in list) instrument code.
+    """
+    all_picks = [p for p in pick_list if \
+         station_id == f"{p.waveform_id.network_code}.{p.waveform_id.station_code}"]
+    for inst in inst_list:
+        inst_picks = [pick for pick in all_picks if pick.waveform_id.channel_code[1] == inst]
+        if len(inst_picks) == 0:
+            pass
+        elif check_unique and len(inst_picks)>1:
+            raise Exception(f"More than one pick satisfies criteria for {station_id} on {inst}: {len(inst_picks)}")
+        else:
+            return inst_picks[0]
+    if len(all_picks) == 0:
+        return None
+    elif check_unique and len(all_picks)>1:
+        raise Exception(f"More than one pick satisfies criteria for {station_id}: {len(all_picks)}")
+    else:
+        return all_picks[0]
