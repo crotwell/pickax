@@ -53,7 +53,7 @@ class StationXMLIterator(StationIterator):
         self.sta_idx = -1
     def ending(self):
         self.net_idx = len(self.inv.networks)-1
-        self.sta_idx = len(self.inv.networks[self.net_idx])
+        self.sta_idx = len(self.inv.networks[self.net_idx].stations)
     def __len__(self):
         count = 0
         for n in self.inv.networks:

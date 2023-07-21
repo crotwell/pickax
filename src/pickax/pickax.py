@@ -233,14 +233,12 @@ class PickAx:
         elif self.config.keymap[event.key]  == "GO_PREV":
             self.do_finish("prev")
         elif self.config.keymap[event.key]  == "GO_NEXT_QUAKE":
-            self.do_finish("prev_quake")
             if self.config.seismogram_itr is not None:
                 sta_itr = self.config.seismogram_itr.station_iterator()
                 if sta_itr is not None:
                     sta_itr.ending()
-            self.do_finish("next_quake")
+            self.do_finish("next")
         elif self.config.keymap[event.key]  == "GO_PREV_QUAKE":
-            self.do_finish("prev_quake")
             if self.config.seismogram_itr is not None:
                 sta_itr = self.config.seismogram_itr.station_iterator()
                 if sta_itr is not None:
@@ -248,6 +246,7 @@ class PickAx:
                 quake_itr = self.config.seismogram_itr.quake_iterator()
                 if quake_itr is not None:
                     quake_itr.prev()
+            self.do_finish("prev")
         elif self.config.keymap[event.key]  == "LIST_QUAKES":
             all = None
             if self.config.seismogram_itr is not None:
