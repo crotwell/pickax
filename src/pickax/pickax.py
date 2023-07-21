@@ -244,7 +244,12 @@ class PickAx:
                     all = quake_itr.all()
             if all is not None:
                 for q in all:
-                    print(q)
+                    o = q.preferred_origin()
+                    m = q.preferred_magnitude()
+                    mstr = "    "
+                    if m is not None:
+                        mstr = f"{m.mag}{m.magnitude_type}"
+                    print(f"{o.time} {mstr} ({o.latitude}/{o.longitude})".strip())
             else:
                 print("Iterator does not allow access to all quakes")
 
@@ -256,7 +261,7 @@ class PickAx:
                     all = sta_itr.all_stations()
             if all is not None:
                 for s in all:
-                    print(s)
+                    print(f"{s.code} ({s.latitude}/{s.longitude})")
             else:
                 print("Iterator does not allow access to all stations")
 
