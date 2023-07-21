@@ -2,11 +2,16 @@ from IPython import embed;
 from IPython.core.getipython import get_ipython
 from .pickax import PickAx
 from .version import __version__
+
+import logging
 import obspy
 from obspy.core.event.base import CreationInfo
 import IPython
 import sys
 import os
+
+import faulthandler
+faulthandler.enable()
 
 from traitlets.config import Config
 
@@ -45,6 +50,8 @@ def main():
     if args.version:
         print(__version__)
         return
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
 
     c = Config()
     c.InteractiveShellApp.exec_lines = [
@@ -52,6 +59,8 @@ def main():
         'from obspy.core.event.base import CreationInfo',
         'import obspy',
         'from pickax import PickAx',
+        'import matplotlib',
+        'print(matplotlib.get_backend())',
         'import matplotlib.pyplot as plt',
         "plt.rcParams['toolbar'] = 'None'",
         "plt.rcParams['keymap.fullscreen'].remove('f')",
