@@ -1,5 +1,6 @@
 import os
 from pickax import (
+    PickAxConfig,
     FDSNQuakeIterator, FDSNStationIterator,
     FDSNSeismogramIterator,
     CacheSeismogramIterator
@@ -46,13 +47,13 @@ def preprocess(stream):
             tr.stats["preprocessed"] = True
 
 # create a few filters, will be able to toggle between them with the 'f' key
-def lpfilter(original_stream, current_stream, prevFilter, idx):
+def lpfilter(original_stream, current_stream, prevFilter, idx, inv, quake):
     return original_stream.filter('lowpass', freq=1.0,  corners=1, zerophase=True)
 
-def bpfilter(original_stream, current_stream, prevFilter, idx):
+def bpfilter(original_stream, current_stream, prevFilter, idx, inv, quake):
     return original_stream.filter('bandpass', freqmin=.5, freqmax=5.0, corners=1, zerophase=True)
 
-def hpfilter(original_stream, current_stream, prevFilter, idx):
+def hpfilter(original_stream, current_stream, prevFilter, idx, inv, quake):
     return original_stream.filter('highpass', freq=1.0,  corners=1, zerophase=True)
 
 filters = [
@@ -99,13 +100,13 @@ quake_itr = FDSNQuakeIterator(quake_query_params, debug=debug)
 
 seis_itr = FDSNSeismogramIterator(quake_itr, sta_itr, **seis_params, debug=debug, timeout=15)
 seis_itr = CacheSeismogramIterator(seis_itr)
+
+pickax_config = PickAxConfig()
+pickax_config.finishFn = dosave
+pickax_config.creation_info  = creation_info
+pickax_config.filters = filters
+pickax_config.seismogram_itr = seis_itr
+pickax_config.phase_list = phase_list
+pickax_config.debug = True
 # start digging!
-pickax = PickAx(
-                finishFn=dosave,
-                phase_list = phase_list,
-                creation_info = creation_info,
-                inventory=sta_itr.inv,
-                filters = filters, # allows toggling between fitlers
-                figsize=(10,8),
-                debug=True,
-                )
+pickax = PickAx(config = pickax_config)
