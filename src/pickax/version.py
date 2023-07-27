@@ -1,2 +1,2 @@
 
-__version__ = "0.5.1-alpha" # also in pyproject.toml
+__version__ = "0.6.0" # also in pyproject.toml
