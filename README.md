@@ -1,6 +1,7 @@
 # PickAx
 
 [![PyPI](https://img.shields.io/pypi/v/seismic-pickax)](https://pypi.org/project/seismic-pickax/)
+[![Documentation Status](https://readthedocs.org/projects/pickax/badge/?version=latest)](https://pickax.readthedocs.io/en/latest/?badge=latest)
 
 PickAx: a simple seismic picker, when you just need to dig out a few
 arrivals.
