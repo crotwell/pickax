@@ -9,7 +9,9 @@ Welcome to Pickax's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   api
+
+   README <readme_link>
+   apidocs/index
 
 
 
