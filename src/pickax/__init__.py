@@ -1,5 +1,5 @@
 
-__version__ = "0.6.0"
+__version__ = "0.6.1dev0"
 
 from .pick_util import (
     reloadQuakeMLWithPicks,

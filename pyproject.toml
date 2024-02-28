@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "seismic-pickax"
-version = "0.6.0"  # also in version.py
+dynamic = ["version"]
 authors = [
   { name="Philip Crotwell", email="crotwell@seis.sc.edu" },
 ]
@@ -20,20 +20,33 @@ classifiers = [
 ]
 dependencies = [
     "obspy>=1.4",
-    "ipython>=8"
+    "ipython>=8",
+    "simplemseed",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/crotwell/pickax"
-"Bug Tracker" = "https://github.com/crotwell/pickax/issues"
+Homepage = "https://github.com/crotwell/pickax"
+Documentation = "https://pickax.readthedocs.io"
+Repository = "https://github.com/crotwell/pickax"
+Issues = "https://github.com/crotwell/pickax/issues"
 
 [project.scripts]
-    "pickax" = "pickax.pickax_main:main"
-    "usgspicks" = "pickax.usgspicks:main"
-    "mergepicks" = "pickax.mergepicks:main"
-    "dumppicks" = "pickax.dumppicks:main"
-    "eqtranspicks" = "pickax.eqtransform:main"
-    "hypoinverse" = "pickax.hypoinverse:main"
-    "exportreal" = "pickax.exportreal:main"
-    "exportvelest" = "pickax.exportvelest:main"
-    "exportdistaz" = "pickax.exportdistaz:main"
+    "pickax" = "seismic-pickax.pickax_main:main"
+    "usgspicks" = "seismic-pickax.usgspicks:main"
+    "mergepicks" = "seismic-pickax.mergepicks:main"
+    "dumppicks" = "seismic-pickax.dumppicks:main"
+    "eqtranspicks" = "seismic-pickax.eqtransform:main"
+    "hypoinverse" = "seismic-pickax.hypoinverse:main"
+    "exportreal" = "seismic-pickax.exportreal:main"
+    "exportvelest" = "seismic-pickax.exportvelest:main"
+    "exportdistaz" = "seismic-pickax.exportdistaz:main"
+
+[tool.pytest.ini_options]
+    addopts = [
+        "--import-mode=importlib",
+        ]
+
+[tool.hatch.version]
+    path = "src/pickax/__init__.py"
+[tool.hatch.build.targets.wheel]
+    packages = ["src/pickax"]
