@@ -1,3 +1,6 @@
+
+__version__ = "0.6.0"
+
 from .pick_util import (
     reloadQuakeMLWithPicks,
     extractEventId,
@@ -37,36 +40,35 @@ from .seismogram_iterator import (
 from .hypoinverse import format_hypoinverse
 from .eqtransform import read_eqt_csv
 from .traveltime import TravelTimeCalc
-from .version import __version__
 
 version = __version__
 
 __all__ = [
-    PickAx,
-    PickAxConfig,
-    origin_mag_to_string,
-    default_titleFn,
-    defaultColorFn,
-    BlitManager,
-    in_area,
-    Point,
-    reloadQuakeMLWithPicks,
-    merge_picks_to_catalog,
-    merge_picks_to_quake,
-    extractEventId,
-    inventory_for_catalog_picks,
-    QuakeIterator,
-    QuakeMLFileIterator,
-    CachedPicksQuakeItr,
-    FDSNQuakeIterator,
-    StationIterator,
-    FDSNStationIterator,
-    format_hypoinverse,
-    SeismogramIterator,
-    FDSNSeismogramIterator,
-    ThreeAtATime,
-    CacheSeismogramIterator,
-    TravelTimeCalc,
-    read_eqt_csv,
-    version
+    "PickAx",
+    "PickAxConfig",
+    "origin_mag_to_string",
+    "default_titleFn",
+    "defaultColorFn",
+    "BlitManager",
+    "in_area",
+    "Point",
+    "reloadQuakeMLWithPicks",
+    "merge_picks_to_catalog",
+    "merge_picks_to_quake",
+    "extractEventId",
+    "inventory_for_catalog_picks",
+    "QuakeIterator",
+    "QuakeMLFileIterator",
+    "CachedPicksQuakeItr",
+    "FDSNQuakeIterator",
+    "StationIterator",
+    "FDSNStationIterator",
+    "format_hypoinverse",
+    "SeismogramIterator",
+    "FDSNSeismogramIterator",
+    "ThreeAtATime",
+    "CacheSeismogramIterator",
+    "TravelTimeCalc",
+    "read_eqt_csv",
+    "version"
 ]
