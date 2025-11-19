@@ -37,8 +37,6 @@ class Seismograph:
                  inventory=None,
                  traveltime_calc = None,
                 ):
-        self._trace_artists = []
-        self._flag_artists = []
         self._zoom_bounds = []
         self.flags = []
         self.ax = ax
@@ -66,8 +64,6 @@ class Seismograph:
         else:
             # reuse current event
             self._init_data_(stream, self.qmlevent)
-        self.clear_trace()
-        self.clear_flags()
         self.ax.clear()
         self.draw()
     def __saved_update_draw(self):
@@ -94,9 +90,8 @@ class Seismograph:
         filt_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         for trace in filt_stream:
             (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
-            self._trace_artists.append(ln)
+
     def draw_all_flags(self):
-        self.clear_flags()
         self.draw_predicted_flags()
         for pick_flag in self.flags:
             pick_flag.draw()
@@ -163,22 +158,6 @@ class Seismograph:
         self.qmlevent.picks.append(pick)
         self.qmlevent.amplitudes.append(amp)
         return pick
-    def clear_trace(self):
-        """
-        Clears the waveforms from the display.
-        """
-        for artist in self._trace_artists:
-            artist.remove()
-            self._trace_artists.remove(artist)
-    def clear_flags(self):
-        """
-        Clears pick flags from the display.
-        """
-        for artist in self._flag_artists:
-            artist.remove()
-            self._flag_artists.remove(artist)
-        # also clear x zoom marker if present
-        self.unset_zoom_bound()
     def draw_flag(self, time, label_str, color="black"):
         at_time = time - self.start
         xmin, xmax, ymin, ymax = self.ax.axis()
@@ -196,8 +175,6 @@ class Seismograph:
         """
         Applies the idx-th filter to the waveform and redraws.
         """
-        self.clear_trace()
-        self.clear_flags()
         if idx < 0 or idx >= len(self.config.filters):
             self._filtered_stream = self.stream
             self.curr_filter = -1
@@ -267,8 +244,6 @@ class Seismograph:
         self.ax.set_xlim(auto=True)
         self.refresh_display()
     def refresh_display(self):
-        self.clear_flags()
-        self.clear_trace()
         self.draw_stream()
         self.draw_all_flags()
     def unset_zoom(self):
@@ -306,8 +281,6 @@ class Seismograph:
         if self.config.amplitude_mode == TRACE_AMP:
             self.unset_ylim()
         self.unset_zoom_bound()
-        self.clear_flags()
-        self.clear_trace()
         self.draw_stream()
         self.draw_all_flags()
     def set_zoom_bound(self, art):
