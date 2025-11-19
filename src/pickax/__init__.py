@@ -1,5 +1,4 @@
-
-__version__ = "0.6.1dev0"
+from .version import __version__, VERSION
 
 from .pick_util import (
     reloadQuakeMLWithPicks,
@@ -70,5 +69,7 @@ __all__ = [
     "CacheSeismogramIterator",
     "TravelTimeCalc",
     "read_eqt_csv",
-    "version"
+    "version",
+    "VERSION",
+    "pickax_main"
 ]
