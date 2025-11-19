@@ -47,6 +47,6 @@ Issues = "https://github.com/crotwell/pickax/issues"
         ]
 
 [tool.hatch.version]
-    path = "src/pickax/__init__.py"
+    path = "src/pickax/version.py"
 [tool.hatch.build.targets.wheel]
     packages = ["src/pickax"]
