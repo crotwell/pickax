@@ -31,15 +31,15 @@ Repository = "https://github.com/crotwell/pickax"
 Issues = "https://github.com/crotwell/pickax/issues"
 
 [project.scripts]
-    "pickax" = "seismic-pickax.pickax_main:main"
-    "usgspicks" = "seismic-pickax.usgspicks:main"
-    "mergepicks" = "seismic-pickax.mergepicks:main"
-    "dumppicks" = "seismic-pickax.dumppicks:main"
-    "eqtranspicks" = "seismic-pickax.eqtransform:main"
-    "hypoinverse" = "seismic-pickax.hypoinverse:main"
-    "exportreal" = "seismic-pickax.exportreal:main"
-    "exportvelest" = "seismic-pickax.exportvelest:main"
-    "exportdistaz" = "seismic-pickax.exportdistaz:main"
+    "pickax" = "pickax.pickax_main:main"
+    "usgspicks" = "pickax.usgspicks:main"
+    "mergepicks" = "pickax.mergepicks:main"
+    "dumppicks" = "pickax.dumppicks:main"
+    "eqtranspicks" = "pickax.eqtransform:main"
+    "hypoinverse" = "pickax.hypoinverse:main"
+    "exportreal" = "pickax.exportreal:main"
+    "exportvelest" = "pickax.exportvelest:main"
+    "exportdistaz" = "pickax.exportdistaz:main"
 
 [tool.pytest.ini_options]
     addopts = [
