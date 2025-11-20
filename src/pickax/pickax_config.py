@@ -1,5 +1,6 @@
 
 import os
+import getpass
 from obspy.core.event.base import CreationInfo
 from obspy.taup import TauPyModel
 
@@ -60,7 +61,7 @@ class PickAxConfig:
         self._model =  None
         self.amplitude_mode = TRACE_AMP
         self.figsize=(10,8)
-        self.creation_info = CreationInfo(author=os.getlogin())
+        self.creation_info = CreationInfo(author=getuser())
         for k,v in DEFAULT_KEYMAP.items():
             self._keymap[k] = v
         self.pick_color_labelFn = lambda p,a: defaultColorFn(p, a, self.author_colors)
@@ -129,3 +130,10 @@ def defaultColorFn(pick, arrival, author_colors):
     if label_str is None:
         label_str = "unknown phase"
     return color, label_str
+
+def getuser():
+    "Gets the user name, 'unknown' if getpass.getuser() raises an exception."
+    try:
+        return getpass.getuser()
+    except:
+        return "unknown"
