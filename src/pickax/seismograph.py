@@ -168,8 +168,7 @@ class Seismograph:
         (ln,) = self.ax.plot(x,y,color=color, lw=1)
         label = None
         label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
-        self._flag_artists.append(ln)
-        self._flag_artists.append(label)
+        
         return ln, label
     def do_filter(self, idx):
         """
