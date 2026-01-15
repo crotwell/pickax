@@ -10,6 +10,7 @@ keymap_desc = {
     'NEXT_FILTER': "Apply next filter",
     'PREV_FILTER': "Apply previous filter",
     'AMP_MODE': "Toggle amplitude scale, indivudual min-max or all on same",
+    'TIME_MODE': "Toggle time scale, absolute or relative",
     'GO_NEXT': "Go to next data",
     'GO_PREV': "Go to previous data",
     "GO_NEXT_QUAKE": "Skip forward to next quake",

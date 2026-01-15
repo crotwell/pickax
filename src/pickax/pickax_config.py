@@ -16,6 +16,7 @@ DEFAULT_KEYMAP = {
     'f': "NEXT_FILTER",
     'F': "PREV_FILTER",
     'y': "AMP_MODE",
+    'p': "TIME_MODE",
     'x': "ZOOM_IN",
     'X': "ZOOM_OUT",
     'z': "ZOOM_ORIG",
@@ -35,6 +36,8 @@ DEFAULT_KEYMAP = {
 TRACE_AMP = "TRACE_AMP"
 WINDOW_AMP = "WINDOW_AMP"
 GLOBAL_AMP = "GLOBAL_AMP"
+RELATIVE_TIME = "REL_TIME"
+ABSOLUTE_TIME = "ABS_TIME"
 
 class PickAxConfig:
     """
@@ -60,6 +63,7 @@ class PickAxConfig:
         self.phase_list = []
         self._model =  None
         self.amplitude_mode = TRACE_AMP
+        self.time_mode = RELATIVE_TIME
         self.figsize=(10,8)
         self.creation_info = CreationInfo(author=getuser())
         for k,v in DEFAULT_KEYMAP.items():
@@ -83,6 +87,8 @@ class PickAxConfig:
         self._model = model
     def toggle_amplitude_mode(self):
         self.amplitude_mode = TRACE_AMP if self.amplitude_mode == GLOBAL_AMP else GLOBAL_AMP
+    def toggle_time_mode(self):
+        self.time_mode = RELATIVE_TIME if self.time_mode == ABSOLUTE_TIME else ABSOLUTE_TIME
 
 
 

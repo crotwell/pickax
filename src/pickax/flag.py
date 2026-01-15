@@ -6,6 +6,7 @@ from .pick_util import (
     pick_to_multiline,
     remove_pick
     )
+from .pickax_config import TRACE_AMP, GLOBAL_AMP, RELATIVE_TIME, ABSOLUTE_TIME
 
 class PickFlag:
     def __init__(self, pick, seismograph, arrival=None, is_modifiable=False):
@@ -84,7 +85,10 @@ class PickFlag:
             tmp_label_artist.remove()
         start = self.seismograph.start
         ax = self.seismograph.ax
-        at_time = self.pick.time - self.seismograph.start
+        if self.seismograph.config.time_mode == ABSOLUTE_TIME:
+            at_time = self.pick.time
+        else:
+            at_time = self.pick.time - self.seismograph.start
         xmin, xmax, ymin, ymax = ax.axis()
         mean = (ymin+ymax)/2
         hw = 0.9*(ymax-ymin)/2

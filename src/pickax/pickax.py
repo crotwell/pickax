@@ -226,6 +226,14 @@ class PickAx:
             for sg in self.seismographList:
                 sg.draw()
             self.fig.canvas.draw_idle()
+        elif self.config.keymap[event.key] == "TIME_MODE":
+            print(f"toggle time mode: {self.config.time_mode} to ")
+            self.config.toggle_time_mode()
+            print(f" {self.config.time_mode} ")
+            self.fig.autofmt_xdate()
+            for sg in self.seismographList:
+                sg.draw()
+            self.fig.canvas.draw_idle()
         elif self.config.keymap[event.key] =="GO_QUIT":
             self.do_finish("quit")
         elif self.config.keymap[event.key]  == "GO_NEXT":

@@ -13,7 +13,7 @@ from .pick_util import (
     arrival_for_pick,
     create_pick_on_stream
     )
-from .pickax_config import TRACE_AMP, GLOBAL_AMP
+from .pickax_config import TRACE_AMP, GLOBAL_AMP, RELATIVE_TIME, ABSOLUTE_TIME
 
 # reg exp to find/replace whitespace in ids
 zap_space = re.compile(r'\s+')
@@ -77,6 +77,10 @@ class Seismograph:
         self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
         self.ax.set_title(self.list_channels())
+        if self.config.time_mode == ABSOLUTE_TIME:
+            self.ax.set_xlim(auto=True)
+        else:
+            self.ax.set_xlim(auto=True)
         if self.config.amplitude_mode == TRACE_AMP:
             self.ax.set_ylim(auto=True)
         else:
@@ -88,8 +92,15 @@ class Seismograph:
         self.draw_all_flags()
     def draw_stream(self):
         filt_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
-        for trace in filt_stream:
-            (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
+        if self.config.time_mode == ABSOLUTE_TIME:
+            print("plot abs time")
+            for trace in filt_stream:
+                (ln,) = self.ax.plot(trace.times("matplotlib"),trace.data,color="black", lw=0.5)
+                self.ax.xaxis_date()
+        else:
+            print("plot rel time")
+            for trace in filt_stream:
+                (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
 
     def draw_all_flags(self):
         self.draw_predicted_flags()
@@ -168,7 +179,7 @@ class Seismograph:
         (ln,) = self.ax.plot(x,y,color=color, lw=1)
         label = None
         label = self.ax.annotate(label_str, xy=(x[1], mean+hw*0.9), xytext=(x[1], mean+hw*0.9),  color=color)
-        
+
         return ln, label
     def do_filter(self, idx):
         """
