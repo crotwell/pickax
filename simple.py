@@ -71,7 +71,7 @@ def flagcolorFn(pick, arrival):
 
 
 # remember who and where we are
-curr_idx = 0
+curr_idx = -1  # -1 is before we start, add one will start at index 0 data
 pickax = None
 
 # function called on quit, next or prev, allows saving of picks however you wish
