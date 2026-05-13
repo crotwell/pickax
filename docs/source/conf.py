@@ -7,10 +7,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Pickax'
-copyright = '2024, Philip Crotwell'
+copyright = '2026, Philip Crotwell'
 author = 'Philip Crotwell'
-release = '0.6'
-version = '0.6.0'
+release = '0.7'
+version = '0.7.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
