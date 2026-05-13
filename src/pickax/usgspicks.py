@@ -5,7 +5,7 @@ from pathlib import Path
 import argparse
 from obspy import read_events, Catalog
 
-from .pick_util import reloadQuakeMLWithPicks
+from .pick_util import reloadQuakeMLWithPicksComcat
 from .pickax_config import origin_mag_to_string
 
 def do_parseargs():
@@ -57,7 +57,7 @@ def main():
                 filePath = Path(dirPath / filename)
                 if not filePath.exists():
                     # only load picks if event file doesn't already exist
-                    reloaded = reloadQuakeMLWithPicks(qmlevent, host=args.dc)
+                    reloaded = reloadQuakeMLWithPicksComcat(qmlevent)
                     single_cat = Catalog([reloaded])
                     single_cat.write(filePath, format="QUAKEML")
                     if args.verbose:

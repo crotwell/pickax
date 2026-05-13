@@ -1,5 +1,11 @@
+import io
+import random
+import string
+
+import requests
 from obspy.clients.fdsn.header import URL_MAPPINGS
 from obspy.clients.fdsn import Client
+from obspy.core.event.catalog import read_events
 from obspy.core.event.origin import Pick
 from obspy.core.event.base import WaveformStreamID, CreationInfo
 from obspy.core.event.resourceid import ResourceIdentifier
@@ -121,7 +127,7 @@ def amplitude_for_pick( pick, qmlevent):
     if pick.resource_id is None:
         return None
     for a in qmlevent.amplitudes:
-        if a.pick_id is not None and pick.resource_id.id == a.pick_id.id:
+        if a is not None and a.pick_id is not None and pick.resource_id.id == a.pick_id.id:
             return a
     return None
 
@@ -235,16 +241,33 @@ def extractEventId(qmlEvent, host=""):
     return publicid
 
 def reloadQuakeMLWithPicks(qmlevent, client=None, host="USGS", debug=False):
+    if host == "USGS":
+        return reloadQuakeMLWithPicksComcat(qmlevent)
     if client is None:
         client = Client(host, _discover_services=False, debug=debug)
     eventid = extractEventId(qmlevent)
     if eventid is not None:
-        cat = client.get_events(eventid=eventid)
+        cat = client.get_events(eventid=eventid, includearrivals=True)
         if len(cat) == 1:
             return cat[0]
         else:
-            raise Error("more than one event returned, should not happen")
+            raise Exception("more than one event returned, should not happen")
     return None
+
+
+def reloadQuakeMLWithPicksComcat(qmlevent):
+    eventid = extractEventId(qmlevent)
+    if eventid is not None:
+        eventUrl = f"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/{eventid}.geojson"
+        geojson = requests.get(eventUrl).json()
+        phaseDataUrl = geojson["properties"]["products"]["phase-data"][0]["contents"]["quakeml.xml"]["url"]
+        catalog = read_events(phaseDataUrl, format="QUAKEML")
+        if len(catalog) == 1:
+            return catalog[0]
+        else:
+            raise Exception(f"zero or more than one event returned, should not happen: {len(catalog)}")
+    return None
+
 
 def inventory_for_catalog_picks(catalog, window=600, client=None, host="IRIS", debug=False):
     wid_list = []
