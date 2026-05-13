@@ -96,7 +96,7 @@ class Seismograph:
             print("plot abs time")
             for trace in filt_stream:
                 (ln,) = self.ax.plot(trace.times("matplotlib"),trace.data,color="black", lw=0.5)
-                self.ax.xaxis_date()
+                self.ax.xaxis_date("UTC")
         else:
             print("plot rel time")
             for trace in filt_stream:
