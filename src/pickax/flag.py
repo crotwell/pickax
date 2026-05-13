@@ -71,20 +71,31 @@ class PickFlag:
             # left the draw area so release the motion
             self.press = None
             return
-        self.pick.time = self.seismograph.start + event.xdata
+
+        if self.seismograph.config.time_mode == ABSOLUTE_TIME:
+            self.pick.time = event.xdata
+        else:
+            self.pick.time = self.seismograph.start + event.xdata
         self.draw()
         event.canvas.draw_idle()
     def draw(self):
         if self.line_artist is not None:
             tmp_line_artist = self.line_artist
             self.line_artist = None
-            tmp_line_artist.remove()
+            try:
+                tmp_line_artist.remove()
+            except:
+                pass
         if self.label_artist is not None:
             tmp_label_artist = self.label_artist
             self.label_artist = None
-            tmp_label_artist.remove()
+            try:
+                tmp_label_artist.remove()
+            except:
+                pass
         start = self.seismograph.start
         ax = self.seismograph.ax
+
         if self.seismograph.config.time_mode == ABSOLUTE_TIME:
             at_time = self.pick.time
         else:

@@ -74,7 +74,10 @@ class Seismograph:
         self.ax.relim()
     def draw(self):
         self.ax.clear()
-        self.ax.set_xlabel(f'seconds from {self.start}')
+        if self.config.time_mode == ABSOLUTE_TIME:
+            self.ax.set_xlabel(f'absolute time {self.start.date}')
+        else:
+            self.ax.set_xlabel(f'seconds from {self.start}')
         stats = self.stream[0].stats
         self.ax.set_title(self.list_channels())
         if self.config.time_mode == ABSOLUTE_TIME:
@@ -93,14 +96,12 @@ class Seismograph:
     def draw_stream(self):
         filt_stream = self._filtered_stream if self._filtered_stream is not None else self.stream
         if self.config.time_mode == ABSOLUTE_TIME:
-            print("plot abs time")
             for trace in filt_stream:
                 (ln,) = self.ax.plot(trace.times("matplotlib"),trace.data,color="black", lw=0.5)
                 self.ax.xaxis_date("UTC")
         else:
-            print("plot rel time")
             for trace in filt_stream:
-                (ln,) = self.ax.plot(trace.times()+(trace.stats.starttime - self.start),trace.data,color="black", lw=0.5)
+                (ln,) = self.ax.plot(trace.times(reftime=self.start),trace.data,color="black", lw=0.5)
 
     def draw_all_flags(self):
         self.draw_predicted_flags()
@@ -159,8 +160,10 @@ class Seismograph:
         if self.curr_filter != -1:
             filter_name = self.config.filters[self.curr_filter]['name']
             filter_name = re.sub(zap_space, '_', filter_name)
+        pick_time = self.start + event.xdata
+
         pick, amp = create_pick_on_stream(self.stream,
-                                       self.start + event.xdata,
+                                       pick_time,
                                        phase,
                                        resource_prefix=self.config.resource_prefix,
                                        creation_info=self.config.creation_info,
@@ -170,7 +173,10 @@ class Seismograph:
         self.qmlevent.amplitudes.append(amp)
         return pick
     def draw_flag(self, time, label_str, color="black"):
-        at_time = time - self.start
+        if self.config.time_mode == ABSOLUTE_TIME:
+            at_time = time
+        else:
+            at_time = time - self.start
         xmin, xmax, ymin, ymax = self.ax.axis()
         mean = (ymin+ymax)/2
         hw = 0.9*(ymax-ymin)/2
@@ -302,7 +308,10 @@ class Seismograph:
 
     def mouse_time_amp(self, event):
         offset = event.xdata
-        time = self.start + offset
+        if self.config.time_mode == RELATIVE_TIME:
+            time = self.start + offset
+        else:
+            time = self.start + offset
         amp = event.ydata
         return time, amp, offset
     def update_xlim(self, xmin, xmax):
