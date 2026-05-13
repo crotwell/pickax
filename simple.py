@@ -1,14 +1,23 @@
 import os
+import sys
 from obspy import Catalog
 from pickax import PickAxConfig, merge_picks_to_catalog
+import requests
+from pathlib import Path
 
 # to get some test data, this uses an event in South Carolina,
 # near Lugoff-Elgin on Oct 31, 2022
-#
-# curl -o BIRD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=BIRD&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# curl -o JSC.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
-# curl -o elgin.qml 'https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=se60414656&format=quakeml'
+
+elgin_qml_file = Path("elgin.qml")
+if not elgin_qml_file.exists():
+   print("""
+Data files for simple not found. You can download them via:
+ curl -o BIRD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=BIRD&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
+ curl -o JKYD.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JKYD&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
+ curl -o JSC.mseed 'https://service.iris.edu/fdsnws/dataselect/1/query?net=CO&sta=JSC&loc=00&cha=HH?&starttime=2022-10-31T01:33:30&endtime=2022-10-31T01:34:30&format=miniseed&nodata=404'
+ curl -o elgin.qml 'https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=se60414656&format=quakeml'
+
+""")
 
 me = "Jane Smith"
 creation_info = CreationInfo(author=me, version="0.0.1")
