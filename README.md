@@ -45,6 +45,8 @@ pickax -s JKYD.mseed
 - D: Display all picks
 - f: Apply next filter
 - F: Apply previous filter
+- y: Toggle amplitude mode
+- p: Toggle time mode
 - x: Zoom in, first use marks one edge, second zooms in
 - X: Zoom back out, double time displayed
 - z: Return to original autozoom
