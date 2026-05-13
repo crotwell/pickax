@@ -1,5 +1,5 @@
 
-__version__ = "0.6.3dev" 
+__version__ = "0.7.0" 
 
 VERSION = __version__
 "Current version"
